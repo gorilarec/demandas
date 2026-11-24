@@ -1,0 +1,37 @@
+import { html } from '../vendor/preact-htm.js';
+const paths = {
+  grid: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
+  camera: 'M14 8l7-4v16l-7-4 M3 6h11v12H3z',
+  plus: 'M12 5v14 M5 12h14',
+  minus: 'M5 12h14',
+  arrow: 'M5 12h14 M14 7l5 5-5 5',
+  back: 'M19 12H5 M10 7l-5 5 5 5',
+  search: 'M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',
+  check: 'M5 12l4 4L19 6',
+  close: 'M6 6l12 12 M6 18L18 6',
+  clock: 'M12 8v5l3 2 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
+  link: 'M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2 M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2',
+  message: 'M21 15a3 3 0 0 1-3 3H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  bulb: 'M9 21h6 M9 17v-2a6 6 0 1 1 6 0v2z',
+  drive: 'M8 3h8l6 11-4 7H6l-4-7z M8 3l10 18 M16 3L6 21 M2 14h20',
+  settings: 'M4 7h16 M4 17h16 M8 4v6 M16 14v6',
+  queue: 'M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01',
+  copy: 'M8 8h12v13H8z M16 8V3H3v13h5',
+  external: 'M14 3h7v7 M10 14L21 3 M10 3H3v18h18v-7',
+  file: 'M14 2H4v20h16V8z M14 2v6h6 M8 13h8 M8 17h6',
+  upload: 'M12 16V3 M7 8l5-5 5 5 M4 16v5h16v-5',
+  download: 'M12 3v13 M7 11l5 5 5-5 M4 17v4h16v-4',
+  share: 'M12 16V2 M7 7l5-5 5 5 M8 10H4v12h16V10h-4',
+  trash: 'M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7',
+  edit: 'M15 3l6 6 M3 21l6-2L21 7l-4-4L3 17z',
+  calendar: 'M3 5h18v16H3z M7 2v6 M17 2v6 M3 10h18',
+  offline: 'M3 3l18 18 M2 8a17 17 0 0 1 20 0 M5 12a12 12 0 0 1 14 0 M9 16a5 5 0 0 1 6 0 M12 20h.01',
+  more: 'M5 12h.01 M12 12h.01 M19 12h.01',
+  chevron: 'M9 5l7 7-7 7',
+  exit: 'M9 3H3v18h6 M9 12h12 M17 8l4 4-4 4',
+  play: 'M8 4l13 8-13 8z',
+  spark: 'M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z',
+};
+export function Icon({ name, size = 20, ...props }) {
+  return html`<svg width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ...${props}><path d=${paths[name] || paths.file}/></svg>`;
+}
