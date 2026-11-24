@@ -7,6 +7,7 @@ import { RolePicker, roleOptions } from '../components/role-picker.js';
 // O link decide o painel; a conta decide quem é a pessoa. A senha nunca é guardada no aparelho.
 const messages = {
   invalid_credentials: errors.invalid_credentials,
+  weak_password: errors.weak_password,
   too_many_attempts: errors.too_many_attempts,
   invalid_code: errors.invalid_code,
   invalid_input: 'Confira o e-mail e use uma senha de 8 caracteres ou mais.',

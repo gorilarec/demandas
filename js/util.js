@@ -30,6 +30,7 @@ export const errors = {
   comment_required: 'Conte o que precisa mudar.',
   too_many_attempts: 'Muitas tentativas erradas. Espere 10 minutos.',
   invalid_credentials: 'E-mail ou senha não conferem.',
+  weak_password: 'Senha fácil demais. Escolha uma menos óbvia.',
   invalid_input: 'Confira os campos e tente novamente.',
   invalid_image: 'Não foi possível ler esta imagem. Escolha outra foto.',
   not_found: 'Este item não está mais disponível.',

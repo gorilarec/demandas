@@ -1,4 +1,4 @@
-const VERSION = 'gd-shell-v2';
+const VERSION = 'gd-shell-v3';
 const SHELL = [
   './',
   'index.html',
@@ -14,6 +14,7 @@ const SHELL = [
   'js/store.js',
   'js/tours.js',
   'js/api-mock.js',
+  'js/boot.js',
   'js/main.js',
   'js/api.js',
   'js/screens/new-client.js',

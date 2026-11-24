@@ -10,6 +10,7 @@ const passwordErrors = {
   invalid_credentials: 'A senha atual não confere.',
   invalid_input: 'A nova senha precisa ter de 8 a 72 caracteres.',
   too_many_attempts: errors.too_many_attempts,
+  weak_password: errors.weak_password,
 };
 // Menu do avatar ("Seu acesso"): foto, nome, "Quem eu sou", senha e os atalhos de sempre.
 // `person` é a pessoa deste aparelho no painel aberto; foto, nome e função valem para todas as contas do aparelho.
