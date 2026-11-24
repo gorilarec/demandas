@@ -28,7 +28,11 @@ export function Tour({ steps, onClose }) {
   useEffect(() => {
     const el = findTarget(step.target);
     // Elemento alto vai para o topo, para sobrar espaço para o balão embaixo.
-    if (el) el.scrollIntoView({ block: el.getBoundingClientRect().height > window.innerHeight * 0.3 ? 'start' : 'center', inline: 'nearest' });
+    if (el)
+      el.scrollIntoView({
+        block: el.getBoundingClientRect().height > window.innerHeight * 0.3 ? 'start' : 'center',
+        inline: 'nearest',
+      });
     const measure = () => {
       const target = findTarget(step.target);
       if (!target) return setBox(null);
@@ -78,7 +82,8 @@ export function Tour({ steps, onClose }) {
     const spaceAbove = box.top;
     const spaceBelow = vh - (box.top + box.height);
     const need = bubbleHeight + 58;
-    const place = spaceBelow >= need && (spaceBelow >= spaceAbove || spaceAbove < need) ? 'below' : spaceAbove >= need ? 'above' : 'center';
+    const place =
+      spaceBelow >= need && (spaceBelow >= spaceAbove || spaceAbove < need) ? 'below' : spaceAbove >= need ? 'above' : 'center';
     const arrowLeft = Math.max(12, Math.min(cx - 14, vw - 40));
     if (place === 'above') {
       bubble = `width:${width}px;left:${left}px;bottom:${vh - box.top + pad + 40}px`;

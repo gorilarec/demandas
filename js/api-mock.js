@@ -4,7 +4,6 @@ const now = () => new Date().toISOString();
 const ago = (days) => new Date(Date.now() - days * 86400000).toISOString();
 const role = new URLSearchParams(location.search).get('papel') || 'admin';
 const userId = 'demo-user';
-let active = true;
 const listeners = new Set();
 const image =
   'data:image/svg+xml,' +
@@ -35,37 +34,91 @@ const clients = [
     created_at: ago(30),
   },
 ];
-let members = [
+const portrait =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320"><rect width="320" height="320" fill="#1d3246"/><path d="M52 320c0-66 48-112 108-112s108 46 108 112z" fill="#38D5FF"/><circle cx="160" cy="130" r="58" fill="#f1c9a5"/><path d="M100 124c0-42 26-66 60-66s60 24 60 66c-20-6-32-18-38-34-14 22-46 32-82 34z" fill="#3a2a20"/></svg>',
+  );
+// A pessoa dentro de um cliente (ou a conta de admin). `accounts` faz o papel de people_private: nunca sai daqui.
+let people = [
   {
-    id: 'me',
-    user_id: userId,
+    id: 'p-me',
     client_id: role === 'admin' ? null : 'aurora',
-    kind: role === 'admin' ? 'admin' : 'client',
-    role_label: role === 'admin' ? 'editor' : role === 'social' ? 'social' : 'cliente',
     name: role === 'admin' ? 'Editor demo' : role === 'social' ? 'Lia (demo)' : 'Clara (demo)',
+    role_label: role === 'admin' ? 'editor' : role === 'social' ? 'social' : 'cliente',
+    role_text: null,
+    avatar_path: null,
+    created_at: ago(10),
     last_seen_at: ago(2),
-    created_at: ago(10),
   },
   {
-    id: 'lia',
-    user_id: 'lia',
-    client_id: 'aurora',
-    kind: 'client',
-    role_label: 'social',
-    name: 'Lia Monteiro',
-    last_seen_at: ago(1),
-    created_at: ago(10),
-  },
-  {
-    id: 'clara',
-    user_id: 'clara',
-    client_id: 'aurora',
-    kind: 'client',
-    role_label: 'cliente',
-    name: 'Clara Duarte',
+    id: 'p-gorilarec',
+    client_id: null,
+    name: 'GORILAREC',
+    role_label: 'editor',
+    role_text: null,
+    avatar_path: null,
+    created_at: ago(40),
     last_seen_at: ago(0),
-    created_at: ago(10),
   },
+  {
+    id: 'p-lia',
+    client_id: 'aurora',
+    name: 'Lia Monteiro',
+    role_label: 'social',
+    role_text: null,
+    avatar_path: portrait,
+    created_at: ago(10),
+    last_seen_at: ago(1),
+  },
+  {
+    id: 'p-clara',
+    client_id: 'aurora',
+    name: 'Clara Duarte',
+    role_label: 'cliente',
+    role_text: null,
+    avatar_path: null,
+    created_at: ago(10),
+    last_seen_at: ago(0),
+  },
+  {
+    id: 'p-bruno',
+    client_id: 'norte',
+    name: 'Bruno Sales',
+    role_label: 'outro',
+    role_text: 'Sócio',
+    avatar_path: null,
+    created_at: ago(8),
+    last_seen_at: ago(3),
+  },
+];
+const accounts = {
+  'p-me': { email: 'voce@demo.example', password: 'demo1234', reset: false },
+  'p-gorilarec': { email: 'estudio@demo.example', password: id(), reset: false },
+  'p-lia': { email: 'lia@aurora.example', password: id(), reset: false },
+  'p-clara': { email: 'clara@aurora.example', password: id(), reset: false },
+  'p-bruno': { email: 'bruno@lojanorte.example', password: id(), reset: false },
+};
+let attempts = [];
+const device = (mid, user, person) => ({
+  id: mid,
+  user_id: user,
+  person_id: person.id,
+  client_id: person.client_id,
+  kind: person.client_id ? 'client' : 'admin',
+  role_label: person.role_label,
+  role_text: person.role_text,
+  name: person.name,
+  last_seen_at: person.last_seen_at,
+  created_at: person.created_at,
+});
+// Um vínculo por aparelho: a Lia entrou pelo celular e pelo computador.
+let members = [
+  device('me', userId, people[0]),
+  device('lia', 'lia', people[2]),
+  device('lia-pc', 'lia-pc', people[2]),
+  device('clara', 'clara', people[3]),
+  device('bruno', 'bruno', people[4]),
 ];
 const shoots = clients.map((c) => ({
   id: `shoot-${c.id}`,
@@ -157,6 +210,7 @@ let events = demands.flatMap((d) => [
     author_name: d.created_by_name,
     author_kind: 'client',
     author_id: 'lia',
+    author_person_id: 'p-lia',
     created_at: d.created_at,
   },
   ...(d.status === 'adjust'
@@ -170,6 +224,8 @@ let events = demands.flatMap((d) => [
           meta: {},
           author_name: 'Clara Duarte',
           author_kind: 'client',
+          author_id: 'clara',
+          author_person_id: 'p-clara',
           created_at: ago(1),
         },
       ]
@@ -183,6 +239,7 @@ events.push({
   body: 'As duas primeiras versões já estão no Drive. Estou finalizando as próximas.',
   author_name: 'GORILAREC',
   author_kind: 'admin',
+  author_person_id: 'p-gorilarec',
   created_at: ago(0),
   meta: {},
 });
@@ -224,14 +281,67 @@ files.push(
 const codes = { aurora: 'demo-aurora', norte: 'demo-norte' };
 const blobUrls = new Map([['demo-image', image]]);
 const clone = (x) => (x === undefined ? undefined : structuredClone(x));
-const me = () => members.find((m) => m.user_id === userId);
+const links = () => members.filter((m) => m.user_id === userId);
+const me = () => links().find((m) => m.kind === 'admin') || links()[0];
 const admin = () => {
   if (me()?.kind !== 'admin') throw fail('forbidden');
 };
 const access = (cid) => {
-  if (!active || !members.some((m) => m.user_id === userId && (m.kind === 'admin' || m.client_id === cid)))
-    throw fail('forbidden');
+  if (!members.some((m) => m.user_id === userId && (m.kind === 'admin' || m.client_id === cid))) throw fail('forbidden');
 };
+const ownPeople = () => people.filter((p) => members.some((m) => m.user_id === userId && m.person_id === p.id));
+const validEmail = (v) => v.length >= 5 && v.length <= 120 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+const validPassword = (v) => typeof v === 'string' && v.length >= 8 && v.length <= 72;
+const cleanEmail = (v) =>
+  String(v || '')
+    .trim()
+    .toLowerCase();
+const locked = (email) => attempts.filter((a) => a.email === email && Date.now() - a.at < 600000).length >= 12;
+function wrong(email) {
+  attempts.push({ email, at: Date.now() });
+  return { ok: false, error: 'invalid_credentials' };
+}
+// "Ligar o aparelho": o vínculo copia nome e função da pessoa.
+function link(person) {
+  let m = members.find((m) => m.user_id === userId && m.client_id === person.client_id);
+  if (!m) {
+    m = {
+      id: id(),
+      user_id: userId,
+      client_id: person.client_id,
+      kind: person.client_id ? 'client' : 'admin',
+      created_at: now(),
+    };
+    members.push(m);
+  }
+  person.last_seen_at = now();
+  Object.assign(m, {
+    person_id: person.id,
+    name: person.name,
+    role_label: person.role_label,
+    role_text: person.role_text,
+    last_seen_at: now(),
+  });
+}
+function profilePatch(patch) {
+  const mine = ownPeople();
+  if (!mine.length) throw fail('forbidden');
+  const name = typeof patch.name === 'string' ? patch.name.trim() : null;
+  if ('name' in patch && (!name || name.length > 60)) throw fail('invalid_input');
+  const text = patch.role_label === 'outro' ? String(patch.role_text || '').trim() : null;
+  if (
+    'role_label' in patch &&
+    (!['cliente', 'social', 'trafego', 'outro'].includes(patch.role_label) ||
+      (patch.role_label === 'outro' && (text.length < 2 || text.length > 40)))
+  )
+    throw fail('invalid_input');
+  for (const person of mine) {
+    if (name) person.name = name;
+    if ('role_label' in patch && person.client_id) Object.assign(person, { role_label: patch.role_label, role_text: text });
+    for (const m of members.filter((m) => m.person_id === person.id))
+      Object.assign(m, { name: person.name, role_label: person.role_label, role_text: person.role_text });
+  }
+}
 const demand = (did) => {
   const d = demands.find((d) => d.id === did && !d.archived_at);
   if (!d) throw fail('not_found');
@@ -262,6 +372,7 @@ function event(d, kind, body, meta = {}) {
     body,
     meta,
     author_id: userId,
+    author_person_id: me()?.person_id || null,
     author_name: me()?.name || 'GORILAREC',
     author_kind: me()?.kind || 'admin',
     created_at: now(),
@@ -435,32 +546,69 @@ const methods = {
     if (!cid) throw fail('invalid_code');
     return { kind: 'client', client_name: clients.find((c) => c.id === cid)?.name };
   },
-  joinWithCode(code, name, roleLabel, roleText = null) {
-    const info = methods.peekCode(code);
-    if (!name.trim() || name.length > 60) throw fail('invalid_input');
+  // Mesmo contrato do banco: falha de login devolve { ok: false, error } e não lança erro.
+  enter(code, emailRaw, password, profile = null) {
+    const email = cleanEmail(emailRaw);
+    if (!validEmail(email) || !validPassword(password)) return { ok: false, error: 'invalid_input' };
     const cid = Object.keys(codes).find((k) => codes[k] === code) || null;
-    active = true;
-    members = members.filter((m) => m.user_id !== userId);
-    members.push({
-      id: id(),
-      user_id: userId,
+    if (!cid && code !== 'demo-admin') return { ok: false, error: 'invalid_code' };
+    if (locked(email)) return { ok: false, error: 'too_many_attempts' };
+    let person = people.find((p) => p.client_id === cid && accounts[p.id]?.email === email);
+    const created = !person;
+    if (!person) {
+      const name = String(profile?.name || '').trim();
+      if (!name) return { ok: false, error: 'profile_required' };
+      const label = cid ? profile.roleLabel : 'editor';
+      const text = label === 'outro' ? String(profile.roleText || '').trim() : null;
+      if (
+        name.length > 60 ||
+        !['cliente', 'social', 'trafego', 'outro', 'editor'].includes(label) ||
+        (cid && label === 'editor') ||
+        (label === 'outro' && (text.length < 2 || text.length > 40))
+      )
+        return { ok: false, error: 'invalid_input' };
+      person = {
+        id: id(),
+        client_id: cid,
+        name,
+        role_label: label,
+        role_text: text,
+        avatar_path: null,
+        created_at: now(),
+        last_seen_at: null,
+      };
+      people.push(person);
+      accounts[person.id] = { email, password, reset: false };
+    } else if (accounts[person.id].reset) Object.assign(accounts[person.id], { password, reset: false });
+    else if (accounts[person.id].password !== password) return wrong(email);
+    link(person);
+    return {
+      ok: true,
+      kind: cid ? 'client' : 'admin',
       client_id: cid,
-      kind: info.kind,
-      name,
-      role_label: info.kind === 'admin' ? 'editor' : roleLabel,
-      role_text: info.kind !== 'admin' && roleLabel === 'outro' ? roleText : null,
-      last_seen_at: null,
-    });
-    return { ...info, client_id: cid };
+      client_name: clients.find((c) => c.id === cid)?.name || null,
+      person_id: person.id,
+      created,
+    };
+  },
+  signIn(emailRaw, password) {
+    const email = cleanEmail(emailRaw);
+    if (!validEmail(email) || !validPassword(password)) return { ok: false, error: 'invalid_input' };
+    if (locked(email)) return { ok: false, error: 'too_many_attempts' };
+    const found = people.filter(
+      (p) => accounts[p.id]?.email === email && !accounts[p.id].reset && accounts[p.id].password === password,
+    );
+    if (!found.length) return wrong(email);
+    found.forEach(link);
+    return { ok: true, count: found.length };
   },
   loadContext() {
     return {
-      memberships: active ? members.filter((m) => m.user_id === userId) : [],
-      clients: active
-        ? clients.filter(
-            (c) => !c.archived_at && members.some((m) => m.user_id === userId && (m.kind === 'admin' || m.client_id === c.id)),
-          )
-        : [],
+      memberships: members.filter((m) => m.user_id === userId),
+      clients: clients.filter(
+        (c) => !c.archived_at && members.some((m) => m.user_id === userId && (m.kind === 'admin' || m.client_id === c.id)),
+      ),
+      people: ownPeople(),
     };
   },
   loadClient(cid) {
@@ -471,6 +619,7 @@ const methods = {
       events: events.filter((e) => e.client_id === cid),
       files: files.filter((f) => f.client_id === cid),
       shoots: shoots.filter((s) => s.client_id === cid),
+      people: people.filter((p) => p.client_id === cid || p.client_id === null),
     };
   },
   loadQueue() {
@@ -482,10 +631,6 @@ const methods = {
         (['recorded', 'editing', 'adjust', 'requested'].includes(d.status) || deliveredMonth(d)),
     );
   },
-  listMembers(cid) {
-    admin();
-    return members.filter((m) => m.client_id === cid);
-  },
   touchSeen(cid) {
     access(cid);
     const m = members.find((m) => m.user_id === userId && (m.kind === 'admin' || m.client_id === cid));
@@ -494,8 +639,32 @@ const methods = {
     return previous;
   },
   renameMe(name) {
-    if (!name.trim() || name.length > 60) throw fail('invalid_input');
-    members.filter((m) => m.user_id === userId).forEach((m) => (m.name = name.trim()));
+    profilePatch({ name });
+  },
+  updateProfile(patch) {
+    profilePatch(patch);
+  },
+  uploadAvatar(person, blob) {
+    const mine = ownPeople().find((p) => p.id === person.id);
+    if (!mine) throw fail('forbidden');
+    if (!['image/webp', 'image/jpeg', 'image/png'].includes(blob.type) || blob.size > 2 * 1024 * 1024)
+      throw fail('invalid_input');
+    if (mine.avatar_path?.startsWith('blob:')) URL.revokeObjectURL(mine.avatar_path);
+    mine.avatar_path = URL.createObjectURL(blob);
+    return mine.avatar_path;
+  },
+  removeAvatar(person) {
+    const mine = ownPeople().find((p) => p.id === person.id);
+    if (!mine) throw fail('forbidden');
+    if (mine.avatar_path?.startsWith('blob:')) URL.revokeObjectURL(mine.avatar_path);
+    mine.avatar_path = null;
+  },
+  changePassword(oldPassword, newPassword) {
+    if (!validPassword(newPassword)) return { ok: false, error: 'invalid_input' };
+    const found = ownPeople().filter((p) => accounts[p.id]?.password === oldPassword);
+    if (!found.length) return { ok: false, error: 'invalid_credentials' };
+    for (const person of found) accounts[person.id].password = newPassword;
+    return { ok: true };
   },
   createDemand: create,
   updateDemand(did, p) {
@@ -619,12 +788,41 @@ const methods = {
     admin();
     client(cid);
     codes[cid] = id().replaceAll('-', '').slice(0, 24);
+    // Derruba os aparelhos; as pessoas (nome, foto, senha) continuam e entram de novo pelo link novo.
     if (removeMembers) members = members.filter((m) => m.client_id !== cid);
     return codes[cid];
   },
-  adminRemoveMember(mid) {
+  adminListPeople(cid) {
     admin();
-    members = members.filter((m) => m.id !== mid);
+    client(cid);
+    return people
+      .filter((p) => p.client_id === cid)
+      .map((p) => ({
+        person_id: p.id,
+        name: p.name,
+        email: accounts[p.id]?.email || '',
+        role_label: p.role_label,
+        role_text: p.role_text,
+        avatar_path: p.avatar_path,
+        last_seen_at: p.last_seen_at,
+        created_at: p.created_at,
+        reset_allowed: !!accounts[p.id]?.reset,
+        devices: members.filter((m) => m.person_id === p.id).length,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  },
+  adminResetPassword(pid) {
+    admin();
+    if (!people.some((p) => p.id === pid && p.client_id)) throw fail('not_found');
+    accounts[pid].reset = true;
+  },
+  adminRemovePerson(pid) {
+    admin();
+    if (!people.some((p) => p.id === pid && p.client_id)) throw fail('not_found');
+    people = people.filter((p) => p.id !== pid);
+    members = members.filter((m) => m.person_id !== pid);
+    delete accounts[pid];
+    for (const e of events) if (e.author_person_id === pid) e.author_person_id = null;
   },
   adminDeleteClient(cid, name) {
     admin();
@@ -636,6 +834,8 @@ const methods = {
     events = events.filter((e) => e.client_id !== cid);
     files = files.filter((f) => f.client_id !== cid);
     members = members.filter((m) => m.client_id !== cid);
+    for (const person of people.filter((p) => p.client_id === cid)) delete accounts[person.id];
+    people = people.filter((p) => p.client_id !== cid);
     delete codes[cid];
   },
   adminLinkFile(fid, did) {
@@ -668,8 +868,8 @@ const methods = {
     listeners.add(fn);
     return () => listeners.delete(fn);
   },
-  signOut() {
-    active = false;
+  signOutDevice() {
+    members = members.filter((m) => m.user_id !== userId);
   },
 };
 const reads = new Set([
@@ -678,7 +878,7 @@ const reads = new Set([
   'loadContext',
   'loadClient',
   'loadQueue',
-  'listMembers',
+  'adminListPeople',
   'signedUrl',
   'subscribe',
   'touchSeen',

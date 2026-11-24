@@ -35,6 +35,6 @@ export default function Install({ state }) {
         if (choice.outcome === 'accepted') toast('Instalação solicitada');
         setState({ installPrompt: null });
       }}><${Icon} name="download"/>Instalar aplicativo</button>`
-    }<ol class="install-steps">${steps.map(([icon, title, description], i) => html`<li><div class="install-illustration"><${Icon} name=${icon} size=${32}/><span>${i + 1}</span></div><div><h2>${title}</h2><p>${description}</p></div></li>`)}</ol>${ios && !saved.code && html`<div class="notice">Abra seu link de acesso no Safari antes de adicionar à tela inicial. O atalho precisa guardar esse link para você entrar.</div>`}${ios && saved.code && html`<p class="form-hint">Seu link de acesso já está na URL do atalho. Ao abrir pela primeira vez, basta informar seu nome se for solicitado.</p>`}`
+    }<ol class="install-steps">${steps.map(([icon, title, description], i) => html`<li><div class="install-illustration"><${Icon} name=${icon} size=${32}/><span>${i + 1}</span></div><div><h2>${title}</h2><p>${description}</p></div></li>`)}</ol>${ios && !saved.code && html`<div class="notice">Se puder, abra seu link de acesso no Safari antes de adicionar à tela inicial: o atalho guarda o link. Sem ele, é só entrar com seu e-mail e senha.</div>`}${ios && saved.code && html`<p class="form-hint">Seu link de acesso já está na URL do atalho. Ao abrir pela primeira vez, entre com o mesmo e-mail e senha.</p>`}`
   }</section>`;
 }

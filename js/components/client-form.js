@@ -8,7 +8,8 @@ export function ClientForm({ client, onSave }) {
   const [nextNumber, setNextNumber] = useState(client?.next_number || 1);
   const [busy, setBusy] = useState(false);
   const folders = driveUrl.split(/[\s,;]+/).filter(Boolean);
-  const recognized = folders.length > 0 && folders.every((f) => /\/folders\/([\w-]+)|[?&]id=([\w-]+)/.test(f) || /^[\w-]{10,}$/.test(f));
+  const recognized =
+    folders.length > 0 && folders.every((f) => /\/folders\/([\w-]+)|[?&]id=([\w-]+)/.test(f) || /^[\w-]{10,}$/.test(f));
   return html`<form class="form-panel" onSubmit=${async (e) => {
     e.preventDefault();
     setBusy(true);

@@ -9,6 +9,7 @@ let state = {
   userId: null,
   memberships: [],
   clients: [],
+  people: [],
   bundles: {},
   queue: [],
   seen: {},

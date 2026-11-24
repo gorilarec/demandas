@@ -32,6 +32,12 @@ const paths = {
   play: 'M8 4l13 8-13 8z',
   chart: 'M4 20V4M4 20h16M9 16v-5M13 16V8M17 16v-7',
   spark: 'M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z',
+  eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
+  eyeOff:
+    'M3 3l18 18 M10.6 5.1Q11.3 5 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 4.1 M6.5 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6 M9.9 9.9a3 3 0 0 0 4.2 4.2',
+  lock: 'M5 11h14v10H5z M8 11V7a4 4 0 0 1 8 0v4',
+  image: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M15.5 9.5h.01',
+  user: 'M4 21a8 8 0 0 1 16 0 M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
 };
 export function Icon({ name, size = 20, ...props }) {
   return html`<svg width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ...${props}><path d=${paths[name] || paths.file}/></svg>`;

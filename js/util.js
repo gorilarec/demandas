@@ -14,7 +14,13 @@ export const columns = {
   adjust: 'Ajuste',
   approved: 'Aprovado',
 };
-export const roles = { cliente: 'Cliente', social: 'Social media', trafego: 'Gestor de tráfego', outro: 'Outro', editor: 'Editor' };
+export const roles = {
+  cliente: 'Cliente',
+  social: 'Social media',
+  trafego: 'Gestor de tráfego',
+  outro: 'Outro',
+  editor: 'Editor',
+};
 export const roleName = (m) => (m?.role_label === 'outro' ? m.role_text || 'Outro' : roles[m?.role_label] || 'Cliente');
 export const formats = { vertical: 'Vertical 9:16', horizontal: 'Horizontal 16:9', quadrado: 'Quadrado', outro: 'Outro' };
 export const errors = {
@@ -22,8 +28,10 @@ export const errors = {
   forbidden: 'Você não tem acesso a esta ação.',
   invalid_transition: 'Não é possível mudar para essa etapa agora.',
   comment_required: 'Conte o que precisa mudar.',
-  too_many_attempts: 'Muitas tentativas. Aguarde 15 minutos e tente de novo.',
+  too_many_attempts: 'Muitas tentativas erradas. Espere 10 minutos.',
+  invalid_credentials: 'E-mail ou senha não conferem.',
   invalid_input: 'Confira os campos e tente novamente.',
+  invalid_image: 'Não foi possível ler esta imagem. Escolha outra foto.',
   not_found: 'Este item não está mais disponível.',
   network: 'Sem conexão. Tentando de novo…',
 };
@@ -110,3 +118,58 @@ export async function copy(text) {
 export const isIOS = () =>
   /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 export const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+// Foto de perfil: o bucket `avatars` é público. No modo demo o caminho já é uma URL local (blob: ou data:).
+export const avatarUrl = (path) =>
+  !path
+    ? null
+    : /^(blob:|data:)/.test(path)
+      ? path
+      : `${(window.APP_CONFIG?.supabaseUrl || '').replace(/\/$/, '')}/storage/v1/object/public/avatars/${path}`;
+const canvasBlob = (canvas, type) => new Promise((resolve) => canvas.toBlob(resolve, type, 0.86));
+async function decodeImage(file) {
+  if (window.createImageBitmap) {
+    try {
+      return await createImageBitmap(file, { imageOrientation: 'from-image' });
+    } catch {
+      /* Falls back to <img>, which decodes formats createImageBitmap refuses in some browsers. */
+    }
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.decoding = 'async';
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = url;
+    });
+    return img;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+// Reduz a foto para 320x320 com corte central. WebP; se o navegador não gerar WebP, JPEG.
+export async function shrinkAvatar(file) {
+  const size = 320;
+  let source;
+  try {
+    source = await decodeImage(file);
+  } catch {
+    throw fail('invalid_image');
+  }
+  const width = source.naturalWidth || source.width;
+  const height = source.naturalHeight || source.height;
+  if (!width || !height) throw fail('invalid_image');
+  const side = Math.min(width, height);
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(source, (width - side) / 2, (height - side) / 2, side, side, 0, 0, size, size);
+  source.close?.();
+  let blob = await canvasBlob(canvas, 'image/webp');
+  if (blob?.type !== 'image/webp') blob = await canvasBlob(canvas, 'image/jpeg');
+  if (!blob || !['image/webp', 'image/jpeg'].includes(blob.type)) throw fail('invalid_image');
+  return blob;
+}

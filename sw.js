@@ -1,4 +1,4 @@
-const VERSION = 'gd-shell-v1';
+const VERSION = 'gd-shell-v2';
 const SHELL = [
   './',
   'index.html',
@@ -12,6 +12,7 @@ const SHELL = [
   'js/icons.js',
   'js/util.js',
   'js/store.js',
+  'js/tours.js',
   'js/api-mock.js',
   'js/main.js',
   'js/api.js',
@@ -36,6 +37,10 @@ const SHELL = [
   'js/components/card.js',
   'js/components/reference.js',
   'js/components/toast.js',
+  'js/components/tour.js',
+  'js/components/avatar.js',
+  'js/components/role-picker.js',
+  'js/components/account-menu.js',
   'fonts/jetbrains-mono-latin-wght-normal.woff2',
   'fonts/space-grotesk-latin-wght-normal.woff2',
   'fonts/space-grotesk-latin-ext-wght-normal.woff2',

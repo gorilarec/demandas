@@ -1,9 +1,9 @@
 import { html, render, useState, useEffect } from '../vendor/preact-htm.js';
-import { useStore, getState, api, boot, action, setState, navigate, toast } from './store.js';
+import { useStore, boot, navigate } from './store.js';
 import { Icon } from './icons.js';
 import { Toast } from './components/toast.js';
-import { Sheet } from './components/sheet.js';
-import { Field, Submit } from './components/fields.js';
+import { Avatar } from './components/avatar.js';
+import { AccountMenu } from './components/account-menu.js';
 import { Skeleton, Empty } from './components/common.js';
 import { readLocal, writeLocal, errorText, roleName } from './util.js';
 import Login from './screens/login.js';
@@ -23,8 +23,6 @@ function App() {
   const state = useStore();
   const [hash, setHash] = useState(location.hash || '#/');
   const [menu, setMenu] = useState(false);
-  const [name, setName] = useState('');
-  const [busy, setBusy] = useState(false);
   useEffect(() => {
     const fn = () => {
       setHash(location.hash || '#/');
@@ -36,8 +34,10 @@ function App() {
   }, []);
   const parts = hash.replace(/^#\/?/, '').split('/');
   const admin = state.memberships.some((m) => m.kind === 'admin');
-  const member = state.memberships[0];
   const client = parts[0] === 'c' ? state.clients.find((c) => c.id === parts[1]) : null;
+  // O vínculo deste aparelho no painel aberto e a pessoa (conta) por trás dele: nome, função e foto.
+  const member = (client && state.memberships.find((m) => m.client_id === client.id)) || state.memberships[0];
+  const me = (member && state.people.find((p) => p.id === member.person_id)) || member;
   const bundle = client && state.bundles[client.id];
   const section = parts[2] || 'demands';
   useEffect(() => {
@@ -142,52 +142,17 @@ function App() {
         .map((item) => navItem(item))}</nav>`
     }`
   }<div class="sidebar-bottom"><a href="#/instalar"><${Icon} name="download" size=${18}/>Pôr na tela inicial</a><div><span class="live-dot"></span>${state.demo ? 'MODO DEMONSTRAÇÃO' : 'ESTÚDIO CONECTADO'}</div><span class="mono">GORILAREC © ${new Date().getFullYear()}</span></div></aside>
-<div class="workspace"><header class="topbar"><div class="topbar-breadcrumb">${client && admin ? html`<a class="icon-button mobile-back" href="#/" aria-label="Voltar aos clientes"><${Icon} name="back"/></a>` : html`<img class="mobile-logo" src="icons/icon.svg" alt="GORILAREC"/>`}<span class="eyebrow desktop-breadcrumb">GORILAREC <span>/</span></span><b>${client?.name || 'Controle de produção'}</b></div><div class="topbar-right">${state.demo && html`<span class="demo-badge">DEMO</span>`}<span class="topbar-name">${member.name}<small>${admin ? 'Editor' : roleName(member)}</small></span><button class="avatar" aria-label="Abrir menu do perfil" onClick=${() => {
-    setName(member.name);
-    setMenu(true);
-  }}>${member.name[0]?.toUpperCase()}</button></div></header>
+<div class="workspace"><header class="topbar"><div class="topbar-breadcrumb">${client && admin ? html`<a class="icon-button mobile-back" href="#/" aria-label="Voltar aos clientes"><${Icon} name="back"/></a>` : html`<img class="mobile-logo" src="icons/icon.svg" alt="GORILAREC"/>`}<span class="eyebrow desktop-breadcrumb">GORILAREC <span>/</span></span><b>${client?.name || 'Controle de produção'}</b></div><div class="topbar-right">${state.demo && html`<span class="demo-badge">DEMO</span>`}<span class="topbar-name">${me.name}<small>${admin ? 'Editor' : roleName(me)}</small></span><${Avatar} person=${me} aria-label="Abrir menu do perfil" onClick=${() => setMenu(true)}/></div></header>
 ${state.offline && html`<div class="network-banner" role="status"><${Icon} name="offline" size=${17}/>Sem conexão. Tentando de novo…</div>`}${state.error && !state.offline && html`<div class="notice error" role="alert">${errorText(state.error)}</div>`}<main class="content" id="main">${page}</main><nav class=${`bottom-nav ${nav.length === 5 ? 'five-items' : ''}`} aria-label="Navegação principal">${nav.map((item) => navItem(item, true))}</nav></div><${Toast} toast=${state.toast}/>
 ${tour && html`<${Tour} key=${tour} steps=${tourSteps(tour, member.role_label)} onClose=${closeTour}/>`}
 ${
   menu &&
-  html`<${Sheet} title="Seu acesso" onClose=${() => setMenu(false)}><form onSubmit=${async (e) => {
-    e.preventDefault();
-    setBusy(true);
-    const r = await action(() => api.renameMe(name.trim()), 'Nome atualizado');
-    if (r.ok) {
-      try {
-        writeLocal('gd-profile', { ...readLocal('gd-profile', {}), name: name.trim() });
-      } catch {}
-      setMenu(false);
-    }
-    setBusy(false);
-  }}><${Field} label="Seu nome" value=${name} onInput=${(e) => setName(e.target.value)} required maxlength="60"/><${Submit} busy=${busy}>Salvar nome<//></form><div class="menu-list"><a href="#/instalar" onClick=${() => setMenu(false)}><${Icon} name="download"/>Pôr na tela inicial</a><button onClick=${() => {
+  html`<${AccountMenu} state=${state} person=${me} admin=${admin} onClose=${() => setMenu(false)} onTour=${() => {
     setMenu(false);
     const name = admin ? (client ? 'admin-cliente' : 'admin-inicio') : 'cliente';
     navigate(admin ? (client ? `/c/${client.id}` : '/') : `/c/${cid}`);
     setTimeout(() => setTour(name), 400);
-  }}><${Icon} name="play"/>Ver tutorial</button><button class="danger" disabled=${busy} onClick=${async () => {
-    const pending = state.pending.length;
-    if (
-      confirm(
-        pending
-          ? `Há ${pending} anotações guardadas neste aparelho. Envie antes de sair para não perder o acesso a elas. Sair mesmo assim?`
-          : 'Sair deste aparelho? Você poderá entrar novamente pelo link de acesso.',
-      )
-    ) {
-      setBusy(true);
-      try {
-        await api.signOut();
-        localStorage.removeItem('gd-profile');
-        setState({ memberships: [], clients: [], bundles: {}, pending: [], seen: {} });
-        setMenu(false);
-        navigate('/');
-      } catch (e) {
-        toast(errorText(e), 'error');
-      }
-      setBusy(false);
-    }
-  }}><${Icon} name="exit"/>Sair deste aparelho</button></div><//>`
+  }}/>`
 }</div>`;
 }
 render(html`<${App}/>`, document.getElementById('app'));

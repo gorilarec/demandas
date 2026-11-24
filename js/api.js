@@ -1,6 +1,7 @@
 import { fail, safeName } from './util.js';
 let db;
-const known = /\b(invalid_code|forbidden|invalid_transition|comment_required|too_many_attempts|invalid_input|not_found)\b/;
+const known =
+  /\b(invalid_code|forbidden|invalid_transition|comment_required|too_many_attempts|invalid_credentials|invalid_input|not_found)\b/;
 function normalize(error) {
   const message = error?.message || String(error);
   const match = message.match(known);
@@ -22,6 +23,14 @@ async function result(query) {
   }
 }
 const rpc = (name, args = {}) => result(db.rpc(name, args));
+// Apagar foto antiga é faxina: se falhar, sobra só um arquivo solto no bucket (ninguém aponta mais para ele).
+async function dropAvatar(path) {
+  try {
+    if (path) await db.storage.from('avatars').remove([path]);
+  } catch {
+    /* A troca ou remoção já valeu no banco. */
+  }
+}
 const api = {
   async init() {
     const c = window.APP_CONFIG;
@@ -35,8 +44,20 @@ const api = {
   async peekCode(code) {
     return rpc('peek_code', { p_code: code });
   },
-  async joinWithCode(code, name, roleLabel, roleText = null) {
-    return rpc('join_with_code', { p_code: code, p_name: name, p_role_label: roleLabel, p_role_text: roleText || null });
+  // Entrada pelo link. Falha de login NÃO lança erro: devolve { ok: false, error } como a função do banco.
+  async enter(code, email, password, profile = null) {
+    return rpc('enter', {
+      p_code: code,
+      p_email: email,
+      p_password: password,
+      p_name: profile?.name || null,
+      p_role_label: profile?.roleLabel || null,
+      p_role_text: profile?.roleText || null,
+    });
+  },
+  // Entrada sem link (aparelho novo de quem já tem conta). Também devolve { ok: false, error } sem lançar.
+  async signIn(email, password) {
+    return rpc('sign_in', { p_email: email, p_password: password });
   },
   async loadContext() {
     const session = await result(db.auth.getSession());
@@ -44,18 +65,22 @@ const api = {
       result(db.from('members').select('*').eq('user_id', session.session.user.id)),
       result(db.from('clients').select('*').is('archived_at', null).order('name')),
     ]);
-    return { memberships, clients };
+    const personIds = [...new Set(memberships.map((m) => m.person_id).filter(Boolean))];
+    const people = personIds.length ? await result(db.from('people').select('*').in('id', personIds)) : [];
+    return { memberships, clients, people };
   },
   async loadClient(clientId) {
     const tables = ['demands', 'demand_refs', 'demand_events', 'drive_files', 'shoots'];
-    const values = await Promise.all(
-      tables.map((t) => {
+    const values = await Promise.all([
+      ...tables.map((t) => {
         let q = db.from(t).select('*').eq('client_id', clientId);
         if (t === 'demands') q = q.is('archived_at', null);
         return result(q);
       }),
-    );
-    return Object.fromEntries(['demands', 'refs', 'events', 'files', 'shoots'].map((k, i) => [k, values[i]]));
+      // Pessoas deste cliente + contas de admin (para nome e foto do editor nos comentários).
+      result(db.from('people').select('*').or(`client_id.eq.${clientId},client_id.is.null`)),
+    ]);
+    return Object.fromEntries(['demands', 'refs', 'events', 'files', 'shoots', 'people'].map((k, i) => [k, values[i]]));
   },
   async loadQueue() {
     const month = new Date();
@@ -71,16 +96,40 @@ const api = {
         ),
     );
   },
-  async listMembers(clientId) {
-    return result(
-      db.from('members').select('*').eq('client_id', clientId).order('last_seen_at', { ascending: false, nullsFirst: false }),
-    );
-  },
   async touchSeen(clientId) {
     return rpc('touch_seen', { p_client: clientId || null });
   },
   async renameMe(name) {
     return rpc('rename_me', { p_name: name });
+  },
+  // patch: { name, role_label, role_text } (as chaves que vierem). Vale para todas as contas deste aparelho.
+  async updateProfile(patch) {
+    return rpc('update_profile', { p: patch });
+  },
+  async uploadAvatar(person, blob) {
+    if (blob.size > 2 * 1024 * 1024) throw fail('invalid_input');
+    const ext = { 'image/webp': 'webp', 'image/png': 'png' }[blob.type] || 'jpg';
+    const path = `${person.id}/${crypto.randomUUID()}.${ext}`;
+    // O caminho muda a cada foto, então o arquivo pode ficar em cache por muito tempo.
+    await result(
+      db.storage.from('avatars').upload(path, blob, { contentType: blob.type, upsert: false, cacheControl: '31536000' }),
+    );
+    try {
+      await rpc('set_avatar', { p_person: person.id, p_path: path });
+    } catch (e) {
+      await dropAvatar(path);
+      throw e;
+    }
+    if (person.avatar_path !== path) await dropAvatar(person.avatar_path);
+    return path;
+  },
+  async removeAvatar(person) {
+    await rpc('set_avatar', { p_person: person.id, p_path: null });
+    await dropAvatar(person.avatar_path);
+  },
+  // Devolve { ok: true } ou { ok: false, error } (senha atual errada não lança erro).
+  async changePassword(oldPassword, newPassword) {
+    return rpc('change_password', { p_old: oldPassword, p_new: newPassword });
   },
   async createDemand(clientId, payload) {
     return rpc('create_demand', { p_client: clientId, p: payload });
@@ -159,8 +208,16 @@ const api = {
   async adminRotateLink(clientId, removeMembers = true) {
     return rpc('admin_rotate_link', { p_client: clientId, p_remove_members: removeMembers });
   },
-  async adminRemoveMember(memberId) {
-    return rpc('admin_remove_member', { p_member: memberId });
+  async adminListPeople(clientId) {
+    return rpc('admin_list_people', { p_client: clientId });
+  },
+  async adminResetPassword(personId) {
+    return rpc('admin_reset_password', { p_person: personId });
+  },
+  // avatarPath (opcional): a foto não cai junto com a pessoa no banco, então a tela manda apagar o arquivo também.
+  async adminRemovePerson(personId, avatarPath = null) {
+    await rpc('admin_remove_person', { p_person: personId });
+    await dropAvatar(avatarPath);
   },
   async adminDeleteClient(id, confirmName) {
     return rpc('admin_delete_client', { p_id: id, p_confirm_name: confirmName });
@@ -179,13 +236,19 @@ const api = {
   },
   async subscribe(onChange) {
     const channel = db.channel('gd-changes');
-    for (const table of ['demands', 'demand_events', 'demand_refs', 'drive_files', 'clients'])
+    for (const table of ['demands', 'demand_events', 'demand_refs', 'drive_files', 'clients', 'people'])
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, onChange);
     channel.subscribe();
     return () => db.removeChannel(channel);
   },
-  async signOut() {
-    await result(db.auth.signOut());
+  // Sair de verdade: apaga o vínculo deste aparelho no banco e descarta a sessão anônima.
+  async signOutDevice() {
+    await rpc('sign_out_device');
+    try {
+      await db.auth.signOut();
+    } catch {
+      /* O vínculo já foi apagado; a sessão anônima que sobrar não enxerga nada. */
+    }
   },
 };
 export default api;

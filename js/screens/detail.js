@@ -9,6 +9,7 @@ import { Sheet } from '../components/sheet.js';
 import { EditDemand } from '../components/edit-demand.js';
 import { Field, Textarea, Submit } from '../components/fields.js';
 import { Reference } from '../components/reference.js';
+import { Avatar } from '../components/avatar.js';
 export default function Detail({ client, bundle, demandId, state, admin }) {
   const d = bundle.demands.find((d) => d.id === demandId);
   const [sheet, setSheet] = useState(null);
@@ -31,6 +32,8 @@ export default function Detail({ client, bundle, demandId, state, admin }) {
   const canEdit = admin || ['requested', 'recorded'].includes(d.status);
   const canArchive = admin || d.status === 'requested';
   const retries = state.uploadRetries[d.id] || [];
+  // Foto do autor pela conta (author_person_id); sem conta ou sem foto, a inicial do nome gravado no evento.
+  const author = (e) => (bundle.people || []).find((p) => p.id === e.author_person_id) || { name: e.author_name };
   async function status(next, body = null, shot = null) {
     setBusy(true);
     const r = await action(() => api.setStatus(d.id, next, body, shot), 'Etapa atualizada');
@@ -100,7 +103,7 @@ ${(shoot || d.camera_clips || d.notes) && html`<${Block} title="GRAVAÇÃO">${sh
   }}/></label></div>${progress && html`<div class="upload-progress" role="status"><span>${progress.name} · ${progress.p}%</span><progress max="100" value=${progress.p}></progress></div>`}${retries.length > 0 && html`<div class="notice error"><b>Pedido salvo. Falta enviar:</b>${retries.map((f) => html`<p>${f.name}</p>`)}<button class="button secondary" disabled=${busy} onClick=${() => upload(retries)}>Tentar enviar de novo</button><small>Mantenha esta tela aberta até concluir o envio.</small></div>`}<//>
 ${files.length > 0 && html`<${Block} title="VÍDEOS ENTREGUES"><${Progress} count=${files.length} expected=${d.expected_files}/>${files.map((f) => html`<a class="drive-file-link" href=${driveUrl(f)} target="_blank" rel="noopener noreferrer"><${Icon} name="play"/><span>${f.name}<small>Abrir no Drive</small></span><${Icon} name="external" size=${16}/></a>`)}<//>`}
 ${admin && html`<${Block} title="NOME PARA EXPORTAR"><div class="export-name"><code>${d.number} - ${d.title}</code><button class="icon-button" aria-label="Copiar nome para exportar" onClick=${() => clipboard(`${d.number} - ${d.title}`)}><${Icon} name="copy"/></button></div><//>`}
-<${Block} title="ATIVIDADE"><ol class="timeline">${events.map((e) => html`<li class=${['comment', 'adjust'].includes(e.kind) ? 'comment-event' : 'system-event'}><span class="timeline-dot"></span><div>${['comment', 'adjust'].includes(e.kind) && html`<b>${e.author_name}</b>`}<p class="preserve">${eventBody(e)}</p><small>${!['comment', 'adjust'].includes(e.kind) && `${e.author_name} · `}${relative(e.created_at)}</small></div></li>`)}</ol><form class="comment-form" onSubmit=${async (
+<${Block} title="ATIVIDADE"><ol class="timeline">${events.map((e) => html`<li class=${['comment', 'adjust'].includes(e.kind) ? 'comment-event' : 'system-event'}><span class="timeline-dot"></span><div>${['comment', 'adjust'].includes(e.kind) && html`<div class="event-author"><${Avatar} person=${author(e)} size=${28}/><b>${e.author_name}</b></div>`}<p class="preserve">${eventBody(e)}</p><small>${!['comment', 'adjust'].includes(e.kind) && html`${e.author_kind !== 'system' && html`<${Avatar} person=${author(e)} size=${18}/>`}${e.author_name} · `}${relative(e.created_at)}</small></div></li>`)}</ol><form class="comment-form" onSubmit=${async (
     e,
   ) => {
     e.preventDefault();

@@ -27,7 +27,8 @@ const perfil = {
 };
 
 export function tourSteps(name, role) {
-  if (name === 'cliente') return role === 'social' ? [gravar, pedir, resumo, lista, perfil] : [pedir, gravar, resumo, lista, perfil];
+  if (name === 'cliente')
+    return role === 'social' ? [gravar, pedir, resumo, lista, perfil] : [pedir, gravar, resumo, lista, perfil];
   if (name === 'admin-inicio')
     return [
       {
