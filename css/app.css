@@ -3103,3 +3103,126 @@ form > .primary {
 .login-alt {
   width: 100%;
 }
+
+/* ---------- bloco de gravação: data, um link só e a lista de vídeos ---------- */
+.block-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.block-step:not(:first-child) {
+  margin-top: 6px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.step-number {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font: 500 12px var(--mono);
+  letter-spacing: 0;
+}
+.block-link {
+  margin-bottom: 22px;
+}
+.block-link .field {
+  margin-bottom: 10px;
+}
+.field-error {
+  margin: 0 0 10px;
+  color: var(--st-adjust);
+  font-size: 13px;
+}
+.link-state {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.link-state .saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--st-approved);
+  font-size: 13px;
+}
+.mode-row {
+  margin-bottom: 22px;
+}
+.details-toggle {
+  justify-content: flex-start;
+  margin: -10px 0 12px;
+  padding-left: 0;
+}
+.block-list {
+  display: grid;
+  gap: 8px;
+}
+.block-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.block-row:hover {
+  border-color: var(--line-2);
+}
+.block-row.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+.block-date {
+  display: flex;
+  flex-direction: column;
+  min-width: 52px;
+  color: var(--accent);
+  font-size: 15px;
+  line-height: 1.25;
+}
+.block-date small {
+  color: var(--faint);
+  font-size: 11px;
+}
+.block-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 14px;
+}
+.block-info small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.block-tip {
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+.notice.other-day {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin: -8px 0 22px;
+  padding: 8px 14px;
+  border-color: color-mix(in srgb, var(--st-editing) 40%, transparent);
+  color: var(--st-editing);
+  font-size: 13px;
+}

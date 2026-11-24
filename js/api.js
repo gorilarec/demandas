@@ -131,8 +131,16 @@ const api = {
   async changePassword(oldPassword, newPassword) {
     return rpc('change_password', { p_old: oldPassword, p_new: newPassword });
   },
+  // shoot_link = link do bloco de gravação digitado junto com a anotação. Vai antes da demanda;
+  // se cair o sinal no meio, a anotação inteira fica guardada no aparelho e é reenviada.
   async createDemand(clientId, payload) {
-    return rpc('create_demand', { p_client: clientId, p: payload });
+    const { shoot_link, ...rest } = payload;
+    if (shoot_link && rest.shoot_date) await api.updateShoot(clientId, rest.shoot_date, { link_url: shoot_link });
+    return rpc('create_demand', { p_client: clientId, p: rest });
+  },
+  // Bloco de gravação do dia: { link_url, title, notes } (as chaves que vierem; null apaga).
+  async updateShoot(clientId, day, patch) {
+    return rpc('update_shoot', { p_client: clientId, p_date: day, p: patch });
   },
   async updateDemand(id, patch) {
     return rpc('update_demand', { p_id: id, p: patch });
@@ -236,7 +244,7 @@ const api = {
   },
   async subscribe(onChange) {
     const channel = db.channel('gd-changes');
-    for (const table of ['demands', 'demand_events', 'demand_refs', 'drive_files', 'clients', 'people'])
+    for (const table of ['demands', 'demand_events', 'demand_refs', 'drive_files', 'clients', 'people', 'shoots'])
       channel.on('postgres_changes', { event: '*', schema: 'public', table }, onChange);
     channel.subscribe();
     return () => db.removeChannel(channel);

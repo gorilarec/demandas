@@ -120,13 +120,15 @@ let members = [
   device('clara', 'clara', people[3]),
   device('bruno', 'bruno', people[4]),
 ];
-const shoots = clients.map((c) => ({
-  id: `shoot-${c.id}`,
-  client_id: c.id,
-  shot_on: today(),
-  title: 'Gravação de conteúdo',
-  created_at: now(),
-}));
+// Dois blocos de gravação por cliente: o de hoje e o da semana passada, cada um com um link só.
+const dayAgo = (n) => {
+  const d = new Date(Date.now() - n * 86400000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const shoots = clients.flatMap((c) => [
+  { id: `shoot-${c.id}`, client_id: c.id, shot_on: today(), title: null, link_url: 'https://docs.google.com/document/d/roteiros-desta-semana', created_at: now() },
+  { id: `shoot-old-${c.id}`, client_id: c.id, shot_on: dayAgo(8), title: null, link_url: 'https://docs.google.com/document/d/roteiros-da-semana-passada', created_at: now() },
+]);
 const titles = [
   'O cuidado começa na primeira conversa',
   'Três mitos sobre cuidar da pele',
@@ -161,7 +163,7 @@ const demands = titles.map((title, i) => ({
   priority: i === 4 ? 'urgent' : 'normal',
   due_date: i === 4 ? ago(1).slice(0, 10) : i % 3 === 0 ? new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10) : null,
   expected_files: i === 0 ? 6 : i % 6 === 3 ? 2 : 1,
-  shoot_id: i % 6 === 2 ? null : `shoot-${i < 6 ? 'aurora' : 'norte'}`,
+  shoot_id: i % 6 === 2 ? null : `shoot-${i % 6 > 2 ? 'old-' : ''}${i < 6 ? 'aurora' : 'norte'}`,
   created_by: i % 2 ? 'lia' : userId,
   created_by_name: 'Lia Monteiro',
   created_by_kind: 'client',
@@ -401,10 +403,19 @@ function shoot(cid, day) {
   if (!day) return null;
   let s = shoots.find((s) => s.client_id === cid && s.shot_on === day);
   if (!s) {
-    s = { id: id(), client_id: cid, shot_on: day, created_at: now() };
+    s = { id: id(), client_id: cid, shot_on: day, title: null, notes: null, link_url: null, created_at: now() };
     shoots.push(s);
   }
   return s.id;
+}
+function updateShoot(cid, day, patch) {
+  client(cid);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day || '') || Object.keys(patch).some((k) => !['link_url', 'title', 'notes'].includes(k)))
+    throw fail('invalid_input');
+  if (patch.link_url != null && (!safeUrl(patch.link_url) || patch.link_url.length > 2000)) throw fail('invalid_input');
+  const s = shoots.find((x) => x.id === shoot(cid, day));
+  Object.assign(s, patch);
+  return s;
 }
 function change(d, status, comment, day) {
   const from = d.status;
@@ -467,7 +478,8 @@ function create(cid, p) {
   const c = client(cid);
   valid(p, true);
   if (!['request', 'recorded'].includes(p.kind)) throw fail('invalid_input');
-  const { links = [], shoot_date, ...fields } = p;
+  const { links = [], shoot_date, shoot_link, ...fields } = p;
+  if (shoot_link && shoot_date) updateShoot(cid, shoot_date, { link_url: shoot_link });
   const d = {
     id: id(),
     client_id: cid,
@@ -667,6 +679,7 @@ const methods = {
     return { ok: true };
   },
   createDemand: create,
+  updateShoot,
   updateDemand(did, p) {
     const d = demand(did);
     if (me().kind !== 'admin' && (!['requested', 'recorded'].includes(d.status) || 'number' in p || 'kind' in p))

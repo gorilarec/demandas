@@ -154,14 +154,14 @@ export async function record(clientId, payload) {
     const d = await api.createDemand(clientId, payload);
     await refresh();
     toast(`${number(d.number)} anotado`);
-    return true;
+    return 'sent';
   } catch (e) {
     if (e.code === 'network') {
       try {
         savePending(clientId, payload);
         setState({ offline: true });
         toast('Anotação guardada neste aparelho');
-        return true;
+        return 'kept';
       } catch {
         toast('Não foi possível guardar no aparelho. Mantenha esta tela aberta e tente de novo.', 'error');
         return false;
@@ -170,6 +170,41 @@ export async function record(clientId, payload) {
     toast(errorText(e), 'error');
     return false;
   }
+}
+// Anota vários vídeos de um bloco de gravação, um atrás do outro. Sem sinal, o que faltou fica guardado no aparelho.
+// Devolve { sent, kept, failed }: enviados, guardados e os que o servidor recusou (com o resto da lista).
+export async function recordMany(clientId, payloads) {
+  let sent = 0;
+  let kept = 0;
+  let failed = [];
+  for (let i = 0; i < payloads.length; i++) {
+    try {
+      await api.createDemand(clientId, payloads[i]);
+      sent++;
+    } catch (e) {
+      const rest = payloads.slice(i);
+      if (e.code === 'network') {
+        try {
+          for (const p of rest) savePending(clientId, p);
+          kept = rest.length;
+          setState({ offline: true });
+        } catch {
+          failed = rest;
+          toast('Não foi possível guardar no aparelho. Mantenha esta tela aberta e tente de novo.', 'error');
+        }
+      } else {
+        failed = rest;
+        toast(errorText(e), 'error');
+      }
+      break;
+    }
+  }
+  if (sent) await refresh();
+  if (!failed.length) {
+    const plural = (n) => `${n} ${n === 1 ? 'vídeo' : 'vídeos'}`;
+    toast(kept ? `${sent ? `${plural(sent)} no ar, ` : ''}${plural(kept)} guardado${kept === 1 ? '' : 's'} neste aparelho` : `${plural(sent)} anotado${sent === 1 ? '' : 's'}`);
+  }
+  return { sent, kept, failed };
 }
 export function setRetries(demandId, files) {
   setState({ uploadRetries: { ...state.uploadRetries, [demandId]: files } });
