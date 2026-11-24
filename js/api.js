@@ -35,8 +35,8 @@ const api = {
   async peekCode(code) {
     return rpc('peek_code', { p_code: code });
   },
-  async joinWithCode(code, name, roleLabel) {
-    return rpc('join_with_code', { p_code: code, p_name: name, p_role_label: roleLabel });
+  async joinWithCode(code, name, roleLabel, roleText = null) {
+    return rpc('join_with_code', { p_code: code, p_name: name, p_role_label: roleLabel, p_role_text: roleText || null });
   },
   async loadContext() {
     const session = await result(db.auth.getSession());

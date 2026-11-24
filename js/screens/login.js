@@ -3,10 +3,17 @@ import { api, refresh, markSeen, navigate, toast } from '../store.js';
 import { readLocal, writeLocal, errorText } from '../util.js';
 import { Field, Submit } from '../components/fields.js';
 import { Icon } from '../icons.js';
+const roleOptions = [
+  ['cliente', 'bulb', 'Cliente'],
+  ['social', 'camera', 'Social media'],
+  ['trafego', 'chart', 'Gestor de tráfego'],
+  ['outro', 'edit', 'Outro'],
+];
 export default function Login({ code }) {
   const saved = readLocal('gd-profile', {});
   const [name, setName] = useState(saved.name || '');
-  const [role, setRole] = useState(saved.role || 'cliente');
+  const [role, setRole] = useState(roleOptions.some(([key]) => key === saved.role) ? saved.role : 'cliente');
+  const [roleText, setRoleText] = useState(saved.roleText || '');
   const [info, setInfo] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -18,8 +25,9 @@ export default function Login({ code }) {
     setBusy(true);
     setError('');
     try {
-      const joined = await api.joinWithCode(code, name.trim(), details?.kind === 'admin' ? 'editor' : role);
-      writeLocal('gd-profile', { name: name.trim(), role, code });
+      const other = role === 'outro' ? roleText.trim() : null;
+      const joined = await api.joinWithCode(code, name.trim(), details?.kind === 'admin' ? 'editor' : role, other);
+      writeLocal('gd-profile', { name: name.trim(), role, roleText: other || '', code });
       await refresh();
       await markSeen();
       navigate(joined.kind === 'admin' ? '/' : `/c/${joined.client_id}`);
@@ -59,7 +67,7 @@ export default function Login({ code }) {
             html`<p>Da ideia ao vídeo, a gente acompanha junto.</p><form onSubmit=${(e) => {
               e.preventDefault();
               join(info);
-            }}><${Field} label="Seu nome" value=${name} onInput=${(e) => setName(e.target.value)} autocomplete="name" required maxlength="60" placeholder="Como podemos chamar você?"/>${info.kind === 'client' && html`<div class="role-picker"><button type="button" class=${role === 'cliente' ? 'selected' : ''} aria-pressed=${role === 'cliente'} onClick=${() => setRole('cliente')}><${Icon} name="bulb"/>Sou o cliente</button><button type="button" class=${role === 'social' ? 'selected' : ''} aria-pressed=${role === 'social'} onClick=${() => setRole('social')}><${Icon} name="camera"/>Sou social media</button></div>`}<${Submit} busy=${busy}>Entrar<//></form>`
+            }}><${Field} label="Seu nome" value=${name} onInput=${(e) => setName(e.target.value)} autocomplete="name" required maxlength="60" placeholder="Como podemos chamar você?"/>${info.kind === 'client' && html`<fieldset class="choice-field role-field"><legend>Quem eu sou</legend><div class="role-picker">${roleOptions.map(([key, icon, label]) => html`<button type="button" class=${role === key ? 'selected' : ''} aria-pressed=${role === key} onClick=${() => setRole(key)}><${Icon} name=${icon}/>${label}</button>`)}</div></fieldset>${role === 'outro' && html`<${Field} label="Qual é a sua função?" value=${roleText} onInput=${(e) => setRoleText(e.target.value)} required minlength="2" maxlength="40" placeholder="Ex.: sócio, vendedor, designer"/>`}`}<${Submit} busy=${busy}>Entrar<//></form>`
           }`
   }${error && html`<p class="notice error" role="alert">${error}</p>`}</div><p class="login-footer mono">IDEIA · GRAVAÇÃO · EDIÇÃO · ENTREGA</p></main>`;
 }

@@ -378,7 +378,8 @@ form > .primary {
 }
 .choice-row,
 .role-picker {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 .choice-row button,
@@ -2761,4 +2762,20 @@ form > .primary {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+.role-field {
+  border: 0;
+  padding: 0;
+  margin: 0 0 4px;
+  min-width: 0;
+}
+.role-field legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.role-field .role-picker {
+  margin-bottom: 16px;
 }

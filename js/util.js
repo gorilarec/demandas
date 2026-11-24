@@ -14,6 +14,8 @@ export const columns = {
   adjust: 'Ajuste',
   approved: 'Aprovado',
 };
+export const roles = { cliente: 'Cliente', social: 'Social media', trafego: 'Gestor de tráfego', outro: 'Outro', editor: 'Editor' };
+export const roleName = (m) => (m?.role_label === 'outro' ? m.role_text || 'Outro' : roles[m?.role_label] || 'Cliente');
 export const formats = { vertical: 'Vertical 9:16', horizontal: 'Horizontal 16:9', quadrado: 'Quadrado', outro: 'Outro' };
 export const errors = {
   invalid_code: 'Link inválido ou trocado. Peça um novo ao GORILAREC.',

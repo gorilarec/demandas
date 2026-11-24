@@ -3,7 +3,7 @@ import { PageHead, Block } from '../components/common.js';
 import { ClientForm } from '../components/client-form.js';
 import { api, action, navigate, toast } from '../store.js';
 import { Icon } from '../icons.js';
-import { inviteUrl, copy, relative, errorText } from '../util.js';
+import { inviteUrl, copy, relative, errorText, roleName } from '../util.js';
 export default function Settings({ client }) {
   const [code, setCode] = useState('');
   const [members, setMembers] = useState([]);
@@ -49,7 +49,7 @@ export default function Settings({ client }) {
     }
   }}>Gerar link novo</button><//><${Block} title="QUEM TEM ACESSO">${grouped.map(
     (m) =>
-      html`<div class="member-row"><span class="avatar small">${m.name[0]}</span><div><b>${m.name}</b><small>${m.role_label === 'social' ? 'Social media' : m.role_label === 'editor' ? 'Editor' : 'Cliente'} · ${relative(m.last_seen_at)}</small></div><button class="text-button danger" disabled=${busy} onClick=${async () => {
+      html`<div class="member-row"><span class="avatar small">${m.name[0]}</span><div><b>${m.name}</b><small>${roleName(m)} · ${relative(m.last_seen_at)}</small></div><button class="text-button danger" disabled=${busy} onClick=${async () => {
         if (confirm(`Remover o acesso de ${m.name} neste aparelho?`)) {
           const r = await run(() => api.adminRemoveMember(m.id), 'Acesso removido');
           if (r.ok) load();

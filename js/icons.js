@@ -30,6 +30,7 @@ const paths = {
   chevron: 'M9 5l7 7-7 7',
   exit: 'M9 3H3v18h6 M9 12h12 M17 8l4 4-4 4',
   play: 'M8 4l13 8-13 8z',
+  chart: 'M4 20V4M4 20h16M9 16v-5M13 16V8M17 16v-7',
   spark: 'M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z',
 };
 export function Icon({ name, size = 20, ...props }) {

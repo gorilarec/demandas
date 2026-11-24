@@ -435,7 +435,7 @@ const methods = {
     if (!cid) throw fail('invalid_code');
     return { kind: 'client', client_name: clients.find((c) => c.id === cid)?.name };
   },
-  joinWithCode(code, name, roleLabel) {
+  joinWithCode(code, name, roleLabel, roleText = null) {
     const info = methods.peekCode(code);
     if (!name.trim() || name.length > 60) throw fail('invalid_input');
     const cid = Object.keys(codes).find((k) => codes[k] === code) || null;
@@ -448,6 +448,7 @@ const methods = {
       kind: info.kind,
       name,
       role_label: info.kind === 'admin' ? 'editor' : roleLabel,
+      role_text: info.kind !== 'admin' && roleLabel === 'outro' ? roleText : null,
       last_seen_at: null,
     });
     return { ...info, client_id: cid };

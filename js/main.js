@@ -5,7 +5,7 @@ import { Toast } from './components/toast.js';
 import { Sheet } from './components/sheet.js';
 import { Field, Submit } from './components/fields.js';
 import { Skeleton, Empty } from './components/common.js';
-import { readLocal, writeLocal, errorText } from './util.js';
+import { readLocal, writeLocal, errorText, roleName } from './util.js';
 import Login from './screens/login.js';
 import Clients from './screens/clients.js';
 import Demands from './screens/demands.js';
@@ -108,7 +108,7 @@ function App() {
         .map((item) => navItem(item))}</nav>`
     }`
   }<div class="sidebar-bottom"><a href="#/instalar"><${Icon} name="download" size=${18}/>Pôr na tela inicial</a><div><span class="live-dot"></span>${state.demo ? 'MODO DEMONSTRAÇÃO' : 'ESTÚDIO CONECTADO'}</div><span class="mono">GORILAREC © ${new Date().getFullYear()}</span></div></aside>
-<div class="workspace"><header class="topbar"><div class="topbar-breadcrumb">${client && admin ? html`<a class="icon-button mobile-back" href="#/" aria-label="Voltar aos clientes"><${Icon} name="back"/></a>` : html`<img class="mobile-logo" src="icons/icon.svg" alt="GORILAREC"/>`}<span class="eyebrow desktop-breadcrumb">GORILAREC <span>/</span></span><b>${client?.name || 'Controle de produção'}</b></div><div class="topbar-right">${state.demo && html`<span class="demo-badge">DEMO</span>`}<span class="topbar-name">${member.name}<small>${admin ? 'Editor' : member.role_label === 'social' ? 'Social media' : 'Cliente'}</small></span><button class="avatar" aria-label="Abrir menu do perfil" onClick=${() => {
+<div class="workspace"><header class="topbar"><div class="topbar-breadcrumb">${client && admin ? html`<a class="icon-button mobile-back" href="#/" aria-label="Voltar aos clientes"><${Icon} name="back"/></a>` : html`<img class="mobile-logo" src="icons/icon.svg" alt="GORILAREC"/>`}<span class="eyebrow desktop-breadcrumb">GORILAREC <span>/</span></span><b>${client?.name || 'Controle de produção'}</b></div><div class="topbar-right">${state.demo && html`<span class="demo-badge">DEMO</span>`}<span class="topbar-name">${member.name}<small>${admin ? 'Editor' : roleName(member)}</small></span><button class="avatar" aria-label="Abrir menu do perfil" onClick=${() => {
     setName(member.name);
     setMenu(true);
   }}>${member.name[0]?.toUpperCase()}</button></div></header>
