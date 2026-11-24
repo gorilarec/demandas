@@ -2779,3 +2779,171 @@ form > .primary {
 .role-field .role-picker {
   margin-bottom: 16px;
 }
+
+/* ---------- tutorial com setas ---------- */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+}
+.tour-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 5, 8, 0.86);
+}
+.tour-hole {
+  position: fixed;
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 9999px rgba(3, 5, 8, 0.86),
+    0 0 0 2px var(--accent),
+    0 0 26px 3px color-mix(in srgb, var(--accent) 45%, transparent);
+  pointer-events: none;
+  transition:
+    top 0.2s,
+    left 0.2s,
+    width 0.2s,
+    height 0.2s;
+}
+.tour-arrow {
+  position: fixed;
+  width: 28px;
+  height: 30px;
+  color: var(--accent);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
+  animation: tour-bounce 1s ease-in-out infinite;
+  pointer-events: none;
+}
+.tour-arrow.up svg {
+  transform: rotate(180deg);
+}
+@keyframes tour-bounce {
+  0%,
+  100% {
+    transform: translateY(-4px);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+.tour-bubble {
+  position: fixed;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-top: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 18px 18px 14px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+}
+.tour-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.tour-bubble h2 {
+  font-size: 19px;
+  line-height: 1.25;
+  margin: 0 0 6px;
+}
+.tour-bubble p {
+  margin: 0 0 16px;
+  color: #c9d1dc;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.tour-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.tour-actions > div {
+  display: flex;
+  gap: 8px;
+}
+.tour-actions .button {
+  width: auto;
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+}
+.tour-actions .text-button {
+  min-height: 44px;
+  color: var(--muted);
+}
+/* ---------- atalhos no topo (celular) ---------- */
+.quick-actions {
+  display: none;
+}
+.more-button {
+  width: 100%;
+  min-height: 48px;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+}
+.more-button:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+@media (max-width: 899px) {
+  .quick-actions {
+    display: grid;
+    gap: 10px;
+    margin: 0 0 22px;
+  }
+  .quick {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 68px;
+    padding: 12px 16px;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+  }
+  .quick.main {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .quick-icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: color-mix(in srgb, currentColor 12%, transparent);
+    flex: none;
+  }
+  .quick-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+  .quick-text b {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .quick-text small {
+    font-size: 13px;
+    color: inherit;
+    opacity: 0.78;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-arrow {
+    animation: none;
+  }
+  .tour-hole {
+    transition: none;
+  }
+}

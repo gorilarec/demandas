@@ -17,6 +17,8 @@ import NewClient from './screens/new-client.js';
 import Settings from './screens/settings.js';
 import Drive from './screens/drive.js';
 import Install from './screens/install.js';
+import { Tour } from './components/tour.js';
+import { tourSteps } from './tours.js';
 function App() {
   const state = useStore();
   const [hash, setHash] = useState(location.hash || '#/');
@@ -45,6 +47,38 @@ function App() {
   useEffect(() => {
     if (state.ready && parts[0] === '' && !admin && state.clients.length) navigate(`/c/${state.clients[0].id}`);
   }, [state.ready, state.clients.length, hash]);
+  // Tutorial de primeira entrada (uma vez por aparelho e por contexto).
+  const [tour, setTour] = useState(null);
+  const onBoard = !!client && !!bundle && section === 'demands';
+  const tourName =
+    !state.ready || !member || parts[0] === 'entrar'
+      ? null
+      : admin
+        ? onBoard
+          ? 'admin-cliente'
+          : parts[0] === ''
+            ? 'admin-inicio'
+            : null
+        : onBoard
+          ? 'cliente'
+          : null;
+  useEffect(() => {
+    if (tour && tourName !== tour) setTour(null);
+    if (!tourName || tour) return;
+    const forced = new URLSearchParams(location.search).get('tour') === '1';
+    if (state.demo ? !forced : readLocal(`gd-tour-${tourName}`, false)) return;
+    if (tourName === 'admin-inicio' && !state.clients.length) return;
+    const timer = setTimeout(() => setTour(tourName), 600);
+    return () => clearTimeout(timer);
+  }, [tourName, state.ready, state.clients.length]);
+  function closeTour() {
+    if (!state.demo) {
+      try {
+        writeLocal(`gd-tour-${tour}`, true);
+      } catch {}
+    }
+    setTour(null);
+  }
   if (!state.ready) {
     return html`<div class="boot"><div class="login-brand"><img src="icons/icon.svg" alt=""/><div>GORILAREC<span>DEMANDAS</span></div></div>${state.error ? html`<div class="notice error">${errorText(state.error)}</div><button class="button primary" onClick=${boot}>Tentar novamente</button>` : html`<${Skeleton}/>`}</div>`;
   }
@@ -113,6 +147,7 @@ function App() {
     setMenu(true);
   }}>${member.name[0]?.toUpperCase()}</button></div></header>
 ${state.offline && html`<div class="network-banner" role="status"><${Icon} name="offline" size=${17}/>Sem conexão. Tentando de novo…</div>`}${state.error && !state.offline && html`<div class="notice error" role="alert">${errorText(state.error)}</div>`}<main class="content" id="main">${page}</main><nav class=${`bottom-nav ${nav.length === 5 ? 'five-items' : ''}`} aria-label="Navegação principal">${nav.map((item) => navItem(item, true))}</nav></div><${Toast} toast=${state.toast}/>
+${tour && html`<${Tour} key=${tour} steps=${tourSteps(tour, member.role_label)} onClose=${closeTour}/>`}
 ${
   menu &&
   html`<${Sheet} title="Seu acesso" onClose=${() => setMenu(false)}><form onSubmit=${async (e) => {
@@ -126,7 +161,12 @@ ${
       setMenu(false);
     }
     setBusy(false);
-  }}><${Field} label="Seu nome" value=${name} onInput=${(e) => setName(e.target.value)} required maxlength="60"/><${Submit} busy=${busy}>Salvar nome<//></form><div class="menu-list"><a href="#/instalar" onClick=${() => setMenu(false)}><${Icon} name="download"/>Pôr na tela inicial</a><button class="danger" disabled=${busy} onClick=${async () => {
+  }}><${Field} label="Seu nome" value=${name} onInput=${(e) => setName(e.target.value)} required maxlength="60"/><${Submit} busy=${busy}>Salvar nome<//></form><div class="menu-list"><a href="#/instalar" onClick=${() => setMenu(false)}><${Icon} name="download"/>Pôr na tela inicial</a><button onClick=${() => {
+    setMenu(false);
+    const name = admin ? (client ? 'admin-cliente' : 'admin-inicio') : 'cliente';
+    navigate(admin ? (client ? `/c/${client.id}` : '/') : `/c/${cid}`);
+    setTimeout(() => setTour(name), 400);
+  }}><${Icon} name="play"/>Ver tutorial</button><button class="danger" disabled=${busy} onClick=${async () => {
     const pending = state.pending.length;
     if (
       confirm(
