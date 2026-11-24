@@ -4,7 +4,7 @@ import { Icon } from '../icons.js';
 import { number, date, relative, statuses, formats, getFiles, driveUrl, copy, today, safeUrl } from '../util.js';
 import { Chip, Progress } from '../components/chip.js';
 import { Steps } from '../components/steps.js';
-import { Block, Empty } from '../components/common.js';
+import { Block, Empty, Linked } from '../components/common.js';
 import { Sheet } from '../components/sheet.js';
 import { EditDemand } from '../components/edit-demand.js';
 import { Field, Textarea, Submit } from '../components/fields.js';
@@ -90,7 +90,7 @@ export default function Detail({ client, bundle, demandId, state, admin }) {
         }`
   }</div>
 ${(d.script || d.script_url) && html`<${Block} title="ROTEIRO" action=${d.script && html`<button class="text-button" onClick=${() => clipboard(d.script)}><${Icon} name="copy" size=${16}/>Copiar</button>`}>${d.script && html`<p class="preserve script-text">${d.script}</p>`}${safeUrl(d.script_url) && html`<a class="button secondary" href=${safeUrl(d.script_url)} target="_blank" rel="noopener noreferrer"><${Icon} name="external"/>Abrir roteiro</a>`}<//>`}
-${(shoot || d.camera_clips || d.notes) && html`<${Block} title="GRAVAÇÃO">${shoot && html`<p class="metadata"><${Icon} name="calendar"/>Bloco de ${date(shoot.shot_on)}</p>`}${safeUrl(shoot?.link_url) && html`<a class="button secondary" href=${safeUrl(shoot.link_url)} target="_blank" rel="noopener noreferrer"><${Icon} name="external"/>Abrir link do bloco</a><p class="muted block-tip">Um link só para todos os vídeos deste dia. Procure ali por "${d.title}".</p>`}${d.camera_clips && html`<p class="camera-clips mono"><${Icon} name="camera"/>${d.camera_clips}</p>`}${d.notes && html`<p class="preserve">${d.notes}</p>`}<//>`}
+${(shoot || d.camera_clips || d.notes) && html`<${Block} title="GRAVAÇÃO">${shoot && html`<p class="metadata"><${Icon} name="calendar"/>Bloco de ${date(shoot.shot_on)}</p>`}${safeUrl(shoot?.link_url) && html`<a class="button secondary" href=${safeUrl(shoot.link_url)} target="_blank" rel="noopener noreferrer"><${Icon} name="external"/>Abrir link do bloco</a><p class="muted block-tip">Um link só para todos os vídeos deste dia. Procure ali por "${d.title}".</p>`}${shoot?.notes && html`<p class="block-note"><b>Observação do bloco:</b> <${Linked} text=${shoot.notes}/></p>`}${d.camera_clips && html`<p class="camera-clips mono"><${Icon} name="camera"/>${d.camera_clips}</p>`}${d.notes && html`<p class="preserve">${d.notes}</p>`}<//>`}
 <${Block} title="DETALHES"><dl class="detail-facts"><div><dt>Formato</dt><dd>${formats[d.format]}</dd></div><div><dt>Precisa gravar?</dt><dd>${d.needs_shoot === null ? 'Não sei' : d.needs_shoot ? 'Sim' : 'Não, só edição'}</dd></div>${d.due_date && html`<div><dt>Prazo</dt><dd>${date(d.due_date)}</dd></div>`}<div><dt>Vídeos finais</dt><dd>${d.expected_files}</dd></div>${d.priority === 'urgent' && html`<div><dt>Prioridade</dt><dd class="danger">Urgente</dd></div>`}</dl><//>
 <${Block} title="REFERÊNCIAS">${refs.map((r) => html`<${Reference} key=${r.id} refItem=${r} canRemove=${admin || r.created_by === state.userId}/>`)}${!refs.length && html`<p class="muted">Adicione uma inspiração para este vídeo.</p>`}<div class="button-row"><button class="button secondary" disabled=${busy} onClick=${() => {
     setText('');

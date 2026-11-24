@@ -1,5 +1,12 @@
 import { html } from '../../vendor/preact-htm.js';
 import { Icon } from '../icons.js';
+import { safeUrl } from '../util.js';
+// Texto com endereços clicáveis (só http/https).
+export function Linked({ text }) {
+  return (text || '')
+    .split(/(https?:\/\/\S+)/g)
+    .map((part, i) => (i % 2 && safeUrl(part) ? html`<a href=${safeUrl(part)} target="_blank" rel="noopener noreferrer">${part}</a>` : part));
+}
 export function PageHead({ eyebrow, title, description, children }) {
   return html`<div class="page-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}<span class="heading-dot">.</span></h1>${description && html`<p>${description}</p>`}</div>${children && html`<div class="head-actions">${children}</div>`}</div>`;
 }

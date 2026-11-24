@@ -1,4 +1,4 @@
-const VERSION = 'gd-shell-v4';
+const VERSION = 'gd-shell-v5';
 const SHELL = [
   './',
   'index.html',

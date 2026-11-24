@@ -1,5 +1,5 @@
 import { html, useState, useEffect, useRef } from '../../vendor/preact-htm.js';
-import { PageHead, Block } from '../components/common.js';
+import { PageHead, Block, Linked } from '../components/common.js';
 import { Field, Textarea, Counter, Submit } from '../components/fields.js';
 import { Card } from '../components/card.js';
 import { api, action, record, recordMany, refresh, retryEntry, toast, setState } from '../store.js';
@@ -149,7 +149,8 @@ ${pending.length > 0 && html`<div class="notice pending" role="status"><${Icon} 
 ${day && day !== today() && html`<div class="notice other-day" role="status"><span>Você está no bloco de <b>${date(day)}</b>, que não é hoje.</span><button type="button" class="text-button" onClick=${() => openDay(today())}>Ir para hoje</button></div>`}
 <div class="block-link"><${Field} label="Link do bloco" hint=${linkBad ? null : 'Um link só para o dia todo: o documento dos roteiros ou a pasta do material. Cada vídeo é achado ali pelo nome.'}><input type="url" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="2000" value=${link} onInput=${on('link')} onBlur=${saveLink} placeholder="https://docs.google.com/… ou pasta do Drive" aria-invalid=${linkBad}/></${Field}>
 ${linkBad && html`<p class="field-error">Cole o endereço completo, começando com https://</p>`}
-${!linkBad && (linkDirty || savedLink) && html`<div class="link-state">${linkDirty ? html`<button type="button" class="button secondary" disabled=${savingLink} onClick=${saveLink}><${Icon} name="check" size=${16}/>${savingLink ? 'Salvando…' : 'Salvar link'}</button>` : html`<span class="saved"><${Icon} name="check" size=${15}/>Link salvo neste bloco</span><a class="text-button" href=${safeUrl(savedLink)} target="_blank" rel="noopener noreferrer"><${Icon} name="external" size=${15}/>Abrir</a>`}</div>`}</div>
+${!linkBad && (linkDirty || savedLink) && html`<div class="link-state">${linkDirty ? html`<button type="button" class="button secondary" disabled=${savingLink} onClick=${saveLink}><${Icon} name="check" size=${16}/>${savingLink ? 'Salvando…' : 'Salvar link'}</button>` : html`<span class="saved"><${Icon} name="check" size=${15}/>Link salvo neste bloco</span><a class="text-button" href=${safeUrl(savedLink)} target="_blank" rel="noopener noreferrer"><${Icon} name="external" size=${15}/>Abrir</a>`}</div>`}
+${shoot?.notes && html`<p class="block-note"><b>Observação do bloco:</b> <${Linked} text=${shoot.notes}/></p>`}</div>
 <div class="block-step"><span class="step-number">2</span><b>Os vídeos gravados</b></div>
 <div class="choice-row mode-row" role="group" aria-label="Como anotar"><button type="button" aria-pressed=${!form.many} class=${!form.many ? 'selected' : ''} onClick=${() => set('many', false)}>Um por vez</button><button type="button" aria-pressed=${form.many} class=${form.many ? 'selected' : ''} onClick=${() => set('many', true)}>Vários de uma vez</button></div>
 ${

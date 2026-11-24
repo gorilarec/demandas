@@ -127,7 +127,7 @@ const dayAgo = (n) => {
 };
 const shoots = clients.flatMap((c) => [
   { id: `shoot-${c.id}`, client_id: c.id, shot_on: today(), title: null, link_url: 'https://docs.google.com/document/d/roteiros-desta-semana', created_at: now() },
-  { id: `shoot-old-${c.id}`, client_id: c.id, shot_on: dayAgo(8), title: null, link_url: 'https://docs.google.com/document/d/roteiros-da-semana-passada', created_at: now() },
+  { id: `shoot-old-${c.id}`, client_id: c.id, shot_on: dayAgo(8), title: null, link_url: 'https://docs.google.com/document/d/roteiros-da-semana-passada', notes: 'Roteiros dos orgânicos: https://docs.google.com/document/d/roteiros-organicos', created_at: now() },
 ]);
 const titles = [
   'O cuidado começa na primeira conversa',

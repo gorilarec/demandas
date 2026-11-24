@@ -3226,3 +3226,16 @@ form > .primary {
   color: var(--st-editing);
   font-size: 13px;
 }
+.block-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.block-note b {
+  color: var(--text);
+  font-weight: 500;
+}
+.block-note a {
+  color: var(--accent);
+}
