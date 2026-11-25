@@ -249,6 +249,22 @@ const api = {
     channel.subscribe();
     return () => db.removeChannel(channel);
   },
+  // Teleprompter: comando para a tela daquele dia (tocar, pausar, velocidade, letra, qual roteiro). Devolve o estado novo.
+  async tpSet(clientId, day, patch) {
+    return rpc('tp_set', { p_client: clientId, p_date: day, p: patch });
+  },
+  async tpGet(clientId, day) {
+    return (await result(db.from('tp_sessions').select('*').eq('client_id', clientId).eq('shot_on', day)))[0] || null;
+  },
+  // Avisa cada mudança do teleprompter daquele dia (não recarrega o painel). Devolve a função que desliga.
+  subscribeTp(clientId, day, onRow) {
+    const channel = db.channel(`gd-tp-${clientId}-${day}`);
+    channel.on('postgres_changes', { event: '*', schema: 'public', table: 'tp_sessions', filter: `client_id=eq.${clientId}` }, (payload) => {
+      if (payload.new?.shot_on === day) onRow(payload.new);
+    });
+    channel.subscribe();
+    return () => db.removeChannel(channel);
+  },
   // Sair de verdade: apaga o vínculo deste aparelho no banco e descarta a sessão anônima.
   async signOutDevice() {
     await rpc('sign_out_device');

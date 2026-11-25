@@ -18,6 +18,7 @@ const blank = () => ({
   many: false,
   bulk: '',
   more: false,
+  kind: 'done', // 'plan' = gravação marcada (roteiro para o teleprompter) · 'done' = já gravou
 });
 const MAX_BATCH = 40;
 // Rascunho de outro dia sem nada digitado abre no dia de hoje (ninguém anota no bloco errado sem querer).
@@ -78,9 +79,12 @@ export default function Recording({ client, bundle, state }) {
     .filter((b) => b.total || b.link_url)
     .sort((a, b) => b.shot_on.localeCompare(a.shot_on));
   const focusName = () => formRef.current?.querySelector('[data-name-input]')?.focus();
+  // Dia que ainda vai chegar = gravação marcada: abre pedindo os roteiros. Hoje ou antes: anotar o que foi gravado.
   function openDay(value) {
-    setForm((f) => ({ ...f, shoot_date: value, link: null }));
+    setForm((f) => ({ ...f, shoot_date: value, link: null, kind: value > today() ? 'plan' : 'done' }));
   }
+  const plan = form.kind === 'plan';
+  const scripted = recorded.filter((d) => d.script?.trim()).length;
   async function saveLink() {
     if (form.link == null || savingLink || !day) return;
     const value = fixLink(form.link);
@@ -107,7 +111,16 @@ export default function Recording({ client, bundle, state }) {
     const already = (name) => recorded.some((d) => same(d.title, name)) || pending.some((p) => p.payload.shoot_date === day && same(p.payload.title, name));
     const shootLink = typedLink && typedLink !== savedLink ? { shoot_link: typedLink } : {};
     setBusy(true);
-    if (form.many) {
+    if (plan) {
+      if (already(form.title)) toast('Esse vídeo já está neste dia', 'error');
+      else {
+        const sent = await record(client.id, { kind: 'request', title: form.title.trim(), script: form.script, needs_shoot: true, shoot_date: day, ...shootLink }, 'roteiro adicionado');
+        if (sent) {
+          setForm((f) => ({ ...blank(), shoot_date: f.shoot_date, kind: 'plan', more: f.more, many: f.many, link: sent === 'sent' ? null : f.link }));
+          focusName();
+        }
+      }
+    } else if (form.many) {
       const fresh = names.filter((n) => !already(n));
       const skipped = names.length - fresh.length;
       if (names.length > MAX_BATCH) toast(`No máximo ${MAX_BATCH} vídeos por vez. Divida a lista em duas.`, 'error');
@@ -135,24 +148,26 @@ export default function Recording({ client, bundle, state }) {
         ...shootLink,
       });
       if (sent) {
-        setForm((f) => ({ ...blank(), shoot_date: f.shoot_date, more: f.more, link: sent === 'sent' ? null : f.link }));
+        setForm((f) => ({ ...blank(), shoot_date: f.shoot_date, kind: f.kind, more: f.more, link: sent === 'sent' ? null : f.link }));
         focusName();
       }
     }
     setBusy(false);
   }
-  return html`<section class="recording-layout"><div><${PageHead} eyebrow="NO SET / BLOCO DE GRAVAÇÃO" title="Gravação" description="Um bloco por dia: a data, um link só e os vídeos gravados."/>
+  return html`<section class="recording-layout"><div><${PageHead} eyebrow="NO SET / BLOCO DE GRAVAÇÃO" title="Gravação" description="Um bloco por dia: marque a gravação com os roteiros ou anote o que já gravou."/>
 ${pending.length > 0 && html`<div class="notice pending" role="status"><${Icon} name="offline"/><div><b>${pending.length} ${pending.length === 1 ? 'anotação guardada' : 'anotações guardadas'}, envio quando voltar o sinal</b>${pending.map((p) => html`<div class="pending-item">${p.payload.title}${p.error && html`<p class="danger">${p.error}<button type="button" class="text-button" onClick=${() => retryEntry(p.id)}>Tentar de novo</button></p>`}</div>`)}</div></div>`}
 <form class="form-panel" ref=${formRef} onSubmit=${save}>
 <div class="block-step"><span class="step-number">1</span><b>O bloco</b></div>
 <${Field} label="Dia da gravação" type="date" required value=${day} onInput=${(e) => openDay(e.target.value)}/>
-${day && day !== today() && html`<div class="notice other-day" role="status"><span>Você está no bloco de <b>${date(day)}</b>, que não é hoje.</span><button type="button" class="text-button" onClick=${() => openDay(today())}>Ir para hoje</button></div>`}
+${day && day !== today() && html`<div class="notice other-day" role="status"><span>${day > today() ? html`Gravação marcada para <b>${date(day)}</b>.` : html`Você está no bloco de <b>${date(day)}</b>, que não é hoje.`}</span><button type="button" class="text-button" onClick=${() => openDay(today())}>Ir para hoje</button></div>`}
 <div class="block-link"><${Field} label="Link do bloco" hint=${linkBad ? null : 'Um link só para o dia todo: o documento dos roteiros ou a pasta do material. Cada vídeo é achado ali pelo nome.'}><input type="url" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="2000" value=${link} onInput=${on('link')} onBlur=${saveLink} placeholder="https://docs.google.com/… ou pasta do Drive" aria-invalid=${linkBad}/></${Field}>
 ${linkBad && html`<p class="field-error">Cole o endereço completo, começando com https://</p>`}
 ${!linkBad && (linkDirty || savedLink) && html`<div class="link-state">${linkDirty ? html`<button type="button" class="button secondary" disabled=${savingLink} onClick=${saveLink}><${Icon} name="check" size=${16}/>${savingLink ? 'Salvando…' : 'Salvar link'}</button>` : html`<span class="saved"><${Icon} name="check" size=${15}/>Link salvo neste bloco</span><a class="text-button" href=${safeUrl(savedLink)} target="_blank" rel="noopener noreferrer"><${Icon} name="external" size=${15}/>Abrir</a>`}</div>`}
 ${shoot?.notes && html`<p class="block-note"><b>Observação do bloco:</b> <${Linked} text=${shoot.notes}/></p>`}</div>
-<div class="block-step"><span class="step-number">2</span><b>Os vídeos gravados</b></div>
-<div class="choice-row mode-row" role="group" aria-label="Como anotar"><button type="button" aria-pressed=${!form.many} class=${!form.many ? 'selected' : ''} onClick=${() => set('many', false)}>Um por vez</button><button type="button" aria-pressed=${form.many} class=${form.many ? 'selected' : ''} onClick=${() => set('many', true)}>Vários de uma vez</button></div>
+<div class="block-step"><span class="step-number">2</span><b>Os vídeos</b></div>
+<div class="choice-row mode-row" role="group" aria-label="O que você vai anotar"><button type="button" aria-pressed=${plan} class=${plan ? 'selected' : ''} onClick=${() => set('kind', 'plan')}>Vai gravar (roteiro)</button><button type="button" aria-pressed=${!plan} class=${!plan ? 'selected' : ''} onClick=${() => set('kind', 'done')}>Já gravou</button></div>
+${plan && html`<${Field} label="Nome do vídeo *" hint="Um roteiro por vídeo. No dia da gravação eles abrem no teleprompter, nesta ordem."><input data-name-input value=${form.title} onInput=${on('title')} required maxlength="160" placeholder="Nome do criativo"/></${Field}><${Textarea} label="Roteiro" rows="9" maxlength="20000" placeholder="Cole aqui o texto que vai ser lido no teleprompter" value=${form.script} onInput=${on('script')} hint="Marcações entre [colchetes], como [pausa], aparecem em outra cor e não são para ler."/><${Submit} busy=${busy}>Adicionar roteiro<//>`}
+${!plan && html`<div class="choice-row mode-row sub-mode" role="group" aria-label="Como anotar"><button type="button" aria-pressed=${!form.many} class=${!form.many ? 'selected' : ''} onClick=${() => set('many', false)}>Um por vez</button><button type="button" aria-pressed=${form.many} class=${form.many ? 'selected' : ''} onClick=${() => set('many', true)}>Vários de uma vez</button></div>
 ${
   form.many
     ? html`<${Field} label="Nomes dos vídeos (um por linha)" hint="Use o mesmo nome do roteiro. O vídeo pronto que subir no Drive com esse nome é marcado como entregue sozinho."><textarea data-name-input rows="7" maxlength="8000" value=${form.bulk} onInput=${on('bulk')} placeholder=${'Roteiro 6\nCTA 1\nCTA 2'}/></${Field}><${Submit} busy=${busy} disabled=${busy || !names.length}>${names.length > 1 ? `Anotar ${names.length} vídeos` : names.length === 1 ? 'Anotar 1 vídeo' : 'Anotar vídeos'}<//>`
@@ -160,9 +175,9 @@ ${
 <button type="button" class="text-button details-toggle" aria-expanded=${form.more} onClick=${() => set('more', !form.more)}><${Icon} name=${form.more ? 'minus' : 'plus'} size=${16}/>${form.more ? 'Menos detalhes' : 'Mais detalhes (roteiro, ganchos, observações)'}</button>
 ${form.more && html`<div class="more-fields"><${Textarea} label="Roteiro" rows="6" maxlength="20000" placeholder="Cole o roteiro aqui, se quiser" value=${form.script} onInput=${on('script')}/><${Field} label="Link só deste vídeo" type="url" value=${form.script_url} onInput=${on('script_url')} placeholder="Só se for diferente do link do bloco"/><${Counter} value=${form.expected_files} onChange=${(v) => set('expected_files', v)}/><${Textarea} label="Observações" value=${form.notes} onInput=${on('notes')} maxlength="4000" rows="3" placeholder="ex.: o take 3 é o bom"/></div>`}
 <${Submit} busy=${busy}>Anotar e ir para o próximo<//>`
-}
+}`}
 <p class="form-hint"><${Icon} name="check" size=${15}/>Seu rascunho fica guardado neste aparelho.</p></form></div>
-<aside class="recording-side"><${Block} title=${`VÍDEOS DESTE BLOCO · ${date(day)} (${recorded.length})`}>${recorded.length ? recorded.map((d) => html`<${Card} key=${d.id} demand=${d} bundle=${bundle}/>`) : html`<p class="muted">O primeiro vídeo anotado neste dia aparece aqui.</p>`}<//>
+<aside class="recording-side">${scripted > 0 && html`<a class="button primary tp-open-button" href=${`#/c/${client.id}/tp/${day}`}><${Icon} name="text"/>Abrir teleprompter<small>${scripted} ${scripted === 1 ? 'roteiro' : 'roteiros'}</small></a>`}<${Block} title=${`VÍDEOS DESTE BLOCO · ${date(day)} (${recorded.length})`}>${recorded.length ? recorded.map((d) => html`<${Card} key=${d.id} demand=${d} bundle=${bundle}/>`) : html`<p class="muted">O primeiro vídeo anotado neste dia aparece aqui.</p>`}<//>
 ${blocks.length > 0 && html`<${Block} title="BLOCOS DE GRAVAÇÃO"><div class="block-list">${blocks.map((b) => html`<button type="button" key=${b.id} class=${`block-row ${b.shot_on === day ? 'selected' : ''}`} aria-pressed=${b.shot_on === day} onClick=${() => openDay(b.shot_on)}><span class="mono block-date">${date(b.shot_on)}<small>${b.shot_on.slice(0, 4)}</small></span><span class="block-info"><b>${b.total} ${b.total === 1 ? 'vídeo' : 'vídeos'}</b><small>${b.done} ${b.done === 1 ? 'entregue' : 'entregues'}${b.link_url ? ' · com link' : ' · sem link'}</small></span><${Icon} name="chevron" size=${16}/></button>`)}</div><//>`}
 <${Block} title="PEDIDOS ESPERANDO GRAVAÇÃO">${bundle.demands
     .filter((d) => d.status === 'requested' || d.id === clipId)

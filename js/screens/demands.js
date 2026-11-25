@@ -25,10 +25,10 @@ export default function Demands({ client, bundle, state, admin }) {
   const shown = hidden ? filtered.filter((d) => d.status !== 'approved' || keep.has(d.id)) : filtered;
   const quick = {
     pedir: ['pedir', 'plus', 'Pedir vídeo', 'Mande a ideia e as referências'],
-    gravar: ['gravacao', 'camera', 'Anotar gravação', 'O que foi gravado hoje'],
+    gravar: ['gravacao', 'camera', 'Gravação', 'Marcar o dia e mandar os roteiros'],
   };
   return html`<section>
-<${PageHead} eyebrow="PAINEL DO CLIENTE" title=${client.name} description=${client.drive_synced_at ? `DRIVE · conferido ${relative(client.drive_synced_at)}` : 'Da ideia ao vídeo. Tudo por aqui.'}><a class="button secondary desktop-action" data-tour="gravar" href=${`#/c/${client.id}/gravacao`}><${Icon} name="camera"/>Anotar gravação</a><a class="button primary desktop-action" data-tour="pedir" href=${`#/c/${client.id}/pedir`}><${Icon} name="plus"/>Pedir vídeo</a><//>
+<${PageHead} eyebrow="PAINEL DO CLIENTE" title=${client.name} description=${client.drive_synced_at ? `DRIVE · conferido ${relative(client.drive_synced_at)}` : 'Da ideia ao vídeo. Tudo por aqui.'}><a class="button secondary desktop-action" data-tour="gravar" href=${`#/c/${client.id}/gravacao`}><${Icon} name="camera"/>Gravação</a><a class="button primary desktop-action" data-tour="pedir" href=${`#/c/${client.id}/pedir`}><${Icon} name="plus"/>Pedir vídeo</a><//>
 <div class="quick-actions">${(social ? ['gravar', 'pedir'] : ['pedir', 'gravar']).map(
     (key, i) =>
       html`<a class=${`quick ${i === 0 ? 'main' : ''}`} data-tour=${key} href=${`#/c/${client.id}/${quick[key][0]}`}><span class="quick-icon"><${Icon} name=${quick[key][1]}/></span><span class="quick-text"><b>${quick[key][2]}</b><small>${quick[key][3]}</small></span><${Icon} name="chevron" size=${16}/></a>`,

@@ -149,11 +149,11 @@ export function retryEntry(id) {
   persistPending(state.pending.map((p) => (p.id === id ? { ...p, error: null } : p)));
   retryPending();
 }
-export async function record(clientId, payload) {
+export async function record(clientId, payload, done = 'anotado') {
   try {
     const d = await api.createDemand(clientId, payload);
     await refresh();
-    toast(`${number(d.number)} anotado`);
+    toast(`${number(d.number)} ${done}`);
     return 'sent';
   } catch (e) {
     if (e.code === 'network') {

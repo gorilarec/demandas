@@ -127,6 +127,7 @@ const dayAgo = (n) => {
 };
 const shoots = clients.flatMap((c) => [
   { id: `shoot-${c.id}`, client_id: c.id, shot_on: today(), title: null, link_url: 'https://docs.google.com/document/d/roteiros-desta-semana', created_at: now() },
+  { id: `shoot-next-${c.id}`, client_id: c.id, shot_on: dayAgo(-2), title: null, link_url: null, created_at: now() },
   { id: `shoot-old-${c.id}`, client_id: c.id, shot_on: dayAgo(8), title: null, link_url: 'https://docs.google.com/document/d/roteiros-da-semana-passada', notes: 'Roteiros dos orgânicos: https://docs.google.com/document/d/roteiros-organicos', created_at: now() },
 ]);
 const titles = [
@@ -163,7 +164,8 @@ const demands = titles.map((title, i) => ({
   priority: i === 4 ? 'urgent' : 'normal',
   due_date: i === 4 ? ago(1).slice(0, 10) : i % 3 === 0 ? new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10) : null,
   expected_files: i === 0 ? 6 : i % 6 === 3 ? 2 : 1,
-  shoot_id: i % 6 === 2 ? null : `shoot-${i % 6 > 2 ? 'old-' : ''}${i < 6 ? 'aurora' : 'norte'}`,
+  // Os pedidos (a gravar) estão numa gravação marcada para depois de amanhã: é o que abre no teleprompter.
+  shoot_id: `shoot-${i % 6 === 2 ? 'next-' : i % 6 > 2 ? 'old-' : ''}${i < 6 ? 'aurora' : 'norte'}`,
   created_by: i % 2 ? 'lia' : userId,
   created_by_name: 'Lia Monteiro',
   created_by_kind: 'client',
@@ -407,6 +409,55 @@ function shoot(cid, day) {
     shoots.push(s);
   }
   return s.id;
+}
+// Teleprompter (demonstração): o estado vale entre abas do mesmo navegador, para ver tela + controle funcionando.
+// (o último estado de cada dia fica no armazenamento do navegador, para a aba que abrir depois enxergar a tela já aberta)
+const tpStore = 'gd-demo-tp';
+const tpRows = {
+  all() {
+    try {
+      return JSON.parse(localStorage.getItem(tpStore)) || {};
+    } catch {
+      return {};
+    }
+  },
+  get(key) {
+    return this.all()[key];
+  },
+  set(key, row) {
+    try {
+      localStorage.setItem(tpStore, JSON.stringify({ ...this.all(), [key]: row }));
+    } catch {
+      /* Sem armazenamento: o controle entre abas só funciona com as duas abertas. */
+    }
+  },
+};
+const tpSubs = new Set();
+const tpBus = typeof BroadcastChannel === 'function' ? new BroadcastChannel('gd-demo-tp') : null;
+const tpKey = (cid, day) => `${cid}|${day}`;
+if (tpBus)
+  tpBus.onmessage = (e) => {
+    tpSubs.forEach((fn) => fn(e.data));
+  };
+function tpSet(cid, day, p) {
+  client(cid);
+  const rules = { playing: 'boolean', mirror: 'boolean', flip: 'boolean', screen: 'boolean', speed: [1, 40], font: [20, 240], width: [30, 100] };
+  for (const [k, v] of Object.entries(p)) {
+    if (k === 'cmd') {
+      if (!['none', 'back', 'forward', 'top'].includes(v)) throw fail('invalid_input');
+    } else if (k === 'demand') {
+      if (v !== null && !demands.some((d) => d.id === v && d.client_id === cid)) throw fail('invalid_input');
+    } else if (!(k in rules)) throw fail('invalid_input');
+    else if (Array.isArray(rules[k]) ? typeof v !== 'number' || v < rules[k][0] || v > rules[k][1] : typeof v !== rules[k]) throw fail('invalid_input');
+  }
+  const old = tpRows.get(tpKey(cid, day)) || { id: id(), client_id: cid, shot_on: day, state: {}, seq: 0, screen_at: null };
+  const { screen, ...rest } = p;
+  // seq cresce com o relógio para valer entre abas que abriram em momentos diferentes.
+  const row = { ...old, state: { ...old.state, ...rest, cmd: p.cmd || 'none' }, seq: Math.max(old.seq + 1, Date.now()), screen_at: screen ? now() : old.screen_at, updated_at: now() };
+  tpRows.set(tpKey(cid, day), row);
+  tpBus?.postMessage(row);
+  setTimeout(() => tpSubs.forEach((fn) => fn(row)), 0);
+  return row;
 }
 function updateShoot(cid, day, patch) {
   client(cid);
@@ -680,6 +731,13 @@ const methods = {
   },
   createDemand: create,
   updateShoot,
+  tpSet,
+  tpGet: (cid, day) => tpRows.get(tpKey(cid, day)) || null,
+  subscribeTp(cid, day, fn) {
+    const handler = (row) => row.client_id === cid && row.shot_on === day && fn(row);
+    tpSubs.add(handler);
+    return () => tpSubs.delete(handler);
+  },
   updateDemand(did, p) {
     const d = demand(did);
     if (me().kind !== 'admin' && (!['requested', 'recorded'].includes(d.status) || 'number' in p || 'kind' in p))
@@ -894,6 +952,9 @@ const reads = new Set([
   'adminListPeople',
   'signedUrl',
   'subscribe',
+  'tpSet',
+  'tpGet',
+  'subscribeTp',
   'touchSeen',
   'adminGetLink',
 ]);

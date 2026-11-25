@@ -3239,3 +3239,456 @@ form > .primary {
 .block-note a {
   color: var(--accent);
 }
+
+/* ---------- teleprompter ---------- */
+body.tp-open {
+  overflow: hidden;
+}
+.tp {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+}
+.tp-view {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tp-view.mirror {
+  transform: scaleX(-1);
+}
+.tp-view.flip {
+  transform: scaleY(-1);
+}
+.tp-view.mirror.flip {
+  transform: scale(-1, -1);
+}
+.tp-view::before,
+.tp-view::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.tp-view::before {
+  top: 0;
+  height: calc(var(--tp-guide) - var(--tp-line) * 0.15);
+  background: linear-gradient(#000 30%, rgba(0, 0, 0, 0.55));
+}
+.tp-view::after {
+  bottom: 0;
+  height: 20%;
+  background: linear-gradient(transparent, #000 90%);
+}
+.tp-column {
+  position: absolute;
+  top: var(--tp-guide);
+  left: 0;
+  right: 0;
+  width: var(--tp-width);
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.tp-text {
+  font: 600 var(--tp-font) / 1.35 var(--font);
+  letter-spacing: -0.01em;
+  overflow-wrap: break-word;
+  will-change: transform;
+}
+.tp-text p {
+  margin: 0 0 calc(var(--tp-line) * 0.6);
+  color: #fff;
+  font-size: inherit;
+}
+.tp-cue {
+  color: var(--accent);
+  font-weight: 500;
+}
+.tp-text .tp-end {
+  color: #555;
+  font-weight: 400;
+  text-align: center;
+}
+.tp-guide {
+  position: absolute;
+  top: calc(var(--tp-guide) + var(--tp-line) / 2);
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 0;
+  pointer-events: none;
+}
+.tp-guide i {
+  position: absolute;
+  top: -11px;
+  border: 11px solid transparent;
+}
+.tp-guide i:first-child {
+  left: 3px;
+  border-left-color: var(--accent);
+}
+.tp-guide i:last-child {
+  right: 3px;
+  border-right-color: var(--accent);
+}
+.tp-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.tp-progress i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.tp-count {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--accent);
+  font: 600 min(42vw, 300px) / 1 var(--font);
+  pointer-events: none;
+}
+.tp-top {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: max(10px, env(safe-area-inset-top)) 12px 12px;
+  background: linear-gradient(#000 55%, transparent);
+  transition: opacity 180ms;
+}
+.tp-top .icon-button {
+  color: #fff;
+  flex: none;
+}
+.tp-title {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.tp-title b {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-title small {
+  overflow: hidden;
+  color: #98a2b3;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-clock {
+  color: var(--accent);
+  font-size: 15px;
+}
+.tp-done {
+  flex: none;
+  min-height: 42px;
+  padding: 0 14px;
+}
+.tp-bottom {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 26px 12px max(14px, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, #000 32%);
+  transition: opacity 180ms;
+}
+.tp.playing .tp-top,
+.tp.playing .tp-bottom {
+  opacity: 0;
+  pointer-events: none;
+}
+.tp-transport,
+.tp-steppers,
+.tp-remote-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 560px;
+}
+.tp-key,
+.tp-play {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 60px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 11px;
+}
+.tp-key:disabled {
+  opacity: 0.35;
+}
+.tp-play {
+  flex: 1.5;
+  min-height: 66px;
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+.tp-stepper {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  color: #98a2b3;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tp-stepper > div {
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.tp-stepper button {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 48px;
+  border: 0;
+  background: none;
+  color: #fff;
+}
+.tp-stepper output {
+  flex: 1;
+  color: #fff;
+  font: 500 17px var(--mono);
+  text-align: center;
+}
+.tp-keys {
+  font-size: 12px;
+}
+/* lista de roteiros e controle remoto usam as cores do app */
+.tp-list,
+.tp-remote {
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--text);
+}
+.tp-list .tp-top,
+.tp-remote .tp-top {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+}
+.tp-list .tp-top .icon-button,
+.tp-remote .tp-top .icon-button {
+  color: var(--text);
+}
+.tp-list-body,
+.tp-remote-body {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 16px 48px;
+}
+.tp-remote-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 560px;
+}
+.tp-mode button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.tp-mode-hint {
+  margin: 10px 0 26px;
+  font-size: 13px;
+}
+.tp-on {
+  color: var(--st-approved);
+}
+.tp-list-body > .eyebrow {
+  margin: 0 0 12px;
+}
+.tp-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 68px;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+}
+.tp-item:hover {
+  border-color: var(--accent);
+}
+.tp-item-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.tp-item-main b {
+  font-size: 15px;
+  font-weight: 500;
+}
+.tp-item-main small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.tp-missing {
+  margin-top: 18px;
+  font-size: 13px;
+}
+.tp-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 13px;
+}
+.tp-link i {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--st-adjust);
+}
+.tp-link.on {
+  color: var(--st-approved);
+}
+.tp-link.on i {
+  background: var(--st-approved);
+}
+.tp-big {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 124px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 24px;
+  font-weight: 600;
+}
+.tp-remote .tp-key,
+.tp-remote .tp-stepper > div {
+  border-color: var(--line-2);
+  background: var(--surface);
+  color: var(--text);
+}
+.tp-remote .tp-key span {
+  font-size: 12px;
+}
+.tp-remote .tp-stepper button,
+.tp-remote .tp-stepper output {
+  color: var(--text);
+}
+.tp-remote .switch-field {
+  margin: 0;
+}
+.tp-remote-done {
+  width: 100%;
+}
+.tp-peek summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--accent);
+  font-size: 14px;
+  cursor: pointer;
+}
+.tp-peek-text {
+  font-size: 16px;
+  line-height: 1.5;
+}
+.tp-peek-text p {
+  margin: 0 0 12px;
+  color: var(--text);
+  font-size: inherit;
+}
+.tp-nav .tp-key {
+  flex-direction: row;
+  gap: 8px;
+  min-height: 52px;
+}
+.tp-open-button {
+  display: flex;
+  width: 100%;
+  margin-bottom: 18px;
+}
+.tp-open-button small {
+  margin-left: 6px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+.tp-detail-link {
+  margin-top: 12px;
+}
+.sub-mode button {
+  min-height: 42px;
+}
+@media (max-height: 520px) {
+  .tp-bottom {
+    flex-direction: row;
+    align-items: flex-end;
+    padding-top: 18px;
+  }
+  .tp-key,
+  .tp-play {
+    min-height: 50px;
+  }
+}
+.tp-open-button small {
+  color: var(--accent-ink);
+}

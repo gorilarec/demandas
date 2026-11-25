@@ -104,6 +104,8 @@ export function AccountMenu({ state, person, admin, onClose, onTour }) {
       await api.signOutDevice();
       try {
         localStorage.removeItem('gd-profile');
+        // Roteiros guardados para o teleprompter ler sem sinal saem junto com a conta.
+        for (const key of Object.keys(localStorage)) if (/^gd-tp-[0-9a-f-]{36}-\d{4}-\d{2}-\d{2}$/.test(key)) localStorage.removeItem(key);
       } catch {
         /* Armazenamento bloqueado: nada a limpar. */
       }

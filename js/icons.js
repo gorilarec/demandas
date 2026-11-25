@@ -38,6 +38,14 @@ const paths = {
   lock: 'M5 11h14v10H5z M8 11V7a4 4 0 0 1 8 0v4',
   image: 'M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M15.5 9.5h.01',
   user: 'M4 21a8 8 0 0 1 16 0 M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
+  pause: 'M8 5v14 M16 5v14',
+  restart: 'M6 5v14 M19 5l-9 7 9 7z',
+  next: 'M18 5v14 M5 5l9 7-9 7z',
+  rewind: 'M11 7l-5 5 5 5 M18 7l-5 5 5 5',
+  forward: 'M13 7l5 5-5 5 M6 7l5 5-5 5',
+  screen: 'M3 4h18v12H3z M8 20h8 M12 16v4',
+  remote: 'M9 2h6a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z M12 7h.01 M12 12h.01 M12 16h.01',
+  text: 'M4 6h16 M4 12h16 M4 18h10',
 };
 export function Icon({ name, size = 20, ...props }) {
   return html`<svg width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ...${props}><path d=${paths[name] || paths.file}/></svg>`;

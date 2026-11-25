@@ -17,6 +17,7 @@ import NewClient from './screens/new-client.js';
 import Settings from './screens/settings.js';
 import Drive from './screens/drive.js';
 import Install from './screens/install.js';
+import Teleprompter, { tpCacheKey } from './screens/teleprompter.js';
 import { Tour } from './components/tour.js';
 import { tourSteps } from './tours.js';
 function App() {
@@ -79,11 +80,21 @@ function App() {
     }
     setTour(null);
   }
-  if (!state.ready) {
+  // Teleprompter: #/c/ID/tp/AAAA-MM-DD[/DEMANDA]. Ocupa a tela toda, sem menu.
+  const tpDay = parts[0] === 'c' && parts[2] === 'tp' && /^\d{4}-\d{2}-\d{2}$/.test(parts[3] || '') ? parts[3] : null;
+  // Abriu sem sinal: o painel não carregou. Não é para cair na tela de entrada (parece que a conta saiu).
+  const down = (state.offline || state.error?.code === 'network') && !(client && bundle);
+  // Sem sinal no set: o teleprompter abre com os roteiros que ficaram guardados neste aparelho.
+  const kept = tpDay && down ? readLocal(tpCacheKey(parts[1], tpDay), null) : null;
+  if (kept?.demands?.length)
+    return html`<${Teleprompter} key=${`${parts[1]}-${tpDay}`} offline=${true} client=${kept.client} bundle=${{ shoots: [{ id: 'guardado', shot_on: tpDay }], demands: kept.demands.map((d) => ({ ...d, shoot_id: 'guardado' })) }} admin=${false} day=${tpDay} demandId=${parts[4] || null}/><${Toast} toast=${state.toast}/>`;
+  if (!state.ready || (down && !member && parts[0] !== 'entrar')) {
     return html`<div class="boot"><div class="login-brand"><img src="icons/icon.svg" alt=""/><div>GORILAREC<span>DEMANDAS</span></div></div>${state.error ? html`<div class="notice error">${errorText(state.error)}</div><button class="button primary" onClick=${boot}>Tentar novamente</button>` : html`<${Skeleton}/>`}</div>`;
   }
   if (parts[0] === 'entrar' || !member)
     return html`<${Login} key=${parts[1] || 'no-code'} code=${parts[0] === 'entrar' ? parts[1] : null}/><${Toast} toast=${state.toast}/>`;
+  if (tpDay && client && bundle)
+    return html`<${Teleprompter} key=${`${client.id}-${tpDay}`} client=${client} bundle=${bundle} admin=${admin} day=${tpDay} demandId=${parts[4] || null}/><${Toast} toast=${state.toast}/>`;
   const rootNav = [
     ['/', 'grid', 'Clientes'],
     ['/fila', 'queue', 'Fila'],
@@ -156,9 +167,13 @@ ${
 }</div>`;
 }
 render(html`<${App}/>`, document.getElementById('app'));
-if ('serviceWorker' in navigator)
-  window.addEventListener('load', () => {
+// Este módulo termina de carregar depois do evento "load" (o store espera um import), então esperar só pelo
+// evento nunca registrava o service worker: sem ele o app não abre sem sinal.
+if ('serviceWorker' in navigator) {
+  const register = () =>
     navigator.serviceWorker.register('sw.js').catch(() => {
       /* Browsing still works when installation is unavailable. */
     });
-  });
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register);
+}

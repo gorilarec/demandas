@@ -7,8 +7,8 @@ const pedir = {
 };
 const gravar = {
   target: '[data-tour="gravar"], .bottom-nav a[href$="/gravacao"], .side-nav a[href$="/gravacao"]',
-  title: 'Gravou? Anote aqui',
-  text: 'No dia da gravação, abra o bloco: a data, um link só com os roteiros e o nome de cada vídeo gravado. Assim nada se perde na hora de editar.',
+  title: 'Marque a gravação',
+  text: 'Escolha o dia e mande os roteiros: no dia eles abrem no teleprompter. Depois é só marcar o que foi gravado, e nada se perde na hora de editar.',
 };
 const resumo = {
   target: '.stats',

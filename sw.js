@@ -1,4 +1,4 @@
-const VERSION = 'gd-shell-v5';
+const VERSION = 'gd-shell-v6';
 const SHELL = [
   './',
   'index.html',
@@ -21,6 +21,7 @@ const SHELL = [
   'js/screens/request.js',
   'js/screens/queue.js',
   'js/screens/recording.js',
+  'js/screens/teleprompter.js',
   'js/screens/login.js',
   'js/screens/install.js',
   'js/screens/drive.js',
