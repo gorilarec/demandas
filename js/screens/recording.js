@@ -45,9 +45,15 @@ export function parseNames(text) {
   }
   return names;
 }
-export default function Recording({ client, bundle, state }) {
+export default function Recording({ client, bundle, state, start = null, startPlan = false }) {
   const key = `gd-draft-record-${state.demo ? 'demo' : 'live'}-${state.userId}-${client.id}`;
-  const [form, setForm] = useState(() => loadDraft(key));
+  // Quem chega pelo teleprompter já cai no dia certo e no modo "vai gravar (roteiro)".
+  const [form, setForm] = useState(() => {
+    const d = loadDraft(key);
+    if (!start && !startPlan) return d;
+    const day = start || d.shoot_date;
+    return { ...d, shoot_date: day, link: day === d.shoot_date ? d.link : null, kind: startPlan || day > today() ? 'plan' : d.kind };
+  });
   const [busy, setBusy] = useState(false);
   const [savingLink, setSavingLink] = useState(false);
   const [clipId, setClipId] = useState(null);
@@ -156,6 +162,7 @@ export default function Recording({ client, bundle, state }) {
   }
   return html`<section class="recording-layout"><div><${PageHead} eyebrow="NO SET / BLOCO DE GRAVAÇÃO" title="Gravação" description="Um bloco por dia: marque a gravação com os roteiros ou anote o que já gravou."/>
 ${pending.length > 0 && html`<div class="notice pending" role="status"><${Icon} name="offline"/><div><b>${pending.length} ${pending.length === 1 ? 'anotação guardada' : 'anotações guardadas'}, envio quando voltar o sinal</b>${pending.map((p) => html`<div class="pending-item">${p.payload.title}${p.error && html`<p class="danger">${p.error}<button type="button" class="text-button" onClick=${() => retryEntry(p.id)}>Tentar de novo</button></p>`}</div>`)}</div></div>`}
+${scripted > 0 && html`<a class="shoot-banner tp-open-button" href=${`#/c/${client.id}/tp/${day}`}><span class="shoot-banner-icon"><${Icon} name="prompter"/></span><span class="shoot-banner-text"><small>${day === today() ? 'GRAVAÇÃO DE HOJE' : `GRAVAÇÃO DE ${date(day)}`}</small><b>${scripted} ${scripted === 1 ? 'roteiro pronto' : 'roteiros prontos'} para ler</b></span><span class="shoot-banner-go">Abrir teleprompter<${Icon} name="arrow" size=${18}/></span></a>`}
 <form class="form-panel" ref=${formRef} onSubmit=${save}>
 <div class="block-step"><span class="step-number">1</span><b>O bloco</b></div>
 <${Field} label="Dia da gravação" type="date" required value=${day} onInput=${(e) => openDay(e.target.value)}/>
@@ -177,7 +184,7 @@ ${form.more && html`<div class="more-fields"><${Textarea} label="Roteiro" rows="
 <${Submit} busy=${busy}>Anotar e ir para o próximo<//>`
 }`}
 <p class="form-hint"><${Icon} name="check" size=${15}/>Seu rascunho fica guardado neste aparelho.</p></form></div>
-<aside class="recording-side">${scripted > 0 && html`<a class="button primary tp-open-button" href=${`#/c/${client.id}/tp/${day}`}><${Icon} name="text"/>Abrir teleprompter<small>${scripted} ${scripted === 1 ? 'roteiro' : 'roteiros'}</small></a>`}<${Block} title=${`VÍDEOS DESTE BLOCO · ${date(day)} (${recorded.length})`}>${recorded.length ? recorded.map((d) => html`<${Card} key=${d.id} demand=${d} bundle=${bundle}/>`) : html`<p class="muted">O primeiro vídeo anotado neste dia aparece aqui.</p>`}<//>
+<aside class="recording-side"><${Block} title=${`VÍDEOS DESTE BLOCO · ${date(day)} (${recorded.length})`}>${recorded.length ? recorded.map((d) => html`<${Card} key=${d.id} demand=${d} bundle=${bundle}/>`) : html`<p class="muted">O primeiro vídeo anotado neste dia aparece aqui.</p>`}<//>
 ${blocks.length > 0 && html`<${Block} title="BLOCOS DE GRAVAÇÃO"><div class="block-list">${blocks.map((b) => html`<button type="button" key=${b.id} class=${`block-row ${b.shot_on === day ? 'selected' : ''}`} aria-pressed=${b.shot_on === day} onClick=${() => openDay(b.shot_on)}><span class="mono block-date">${date(b.shot_on)}<small>${b.shot_on.slice(0, 4)}</small></span><span class="block-info"><b>${b.total} ${b.total === 1 ? 'vídeo' : 'vídeos'}</b><small>${b.done} ${b.done === 1 ? 'entregue' : 'entregues'}${b.link_url ? ' · com link' : ' · sem link'}</small></span><${Icon} name="chevron" size=${16}/></button>`)}</div><//>`}
 <${Block} title="PEDIDOS ESPERANDO GRAVAÇÃO">${bundle.demands
     .filter((d) => d.status === 'requested' || d.id === clipId)

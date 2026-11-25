@@ -58,6 +58,29 @@ export function relative(v) {
   if (seconds < 172800) return 'ontem';
   return date(v);
 }
+// "Hoje", "Amanhã", "sex, 28/11": o dia de uma gravação do jeito que se fala.
+export function dayName(day) {
+  const noon = (v) => new Date(`${v}T12:00:00`);
+  const diff = Math.round((noon(day) - noon(today())) / 86400000);
+  if (diff === 0) return 'Hoje';
+  if (diff === 1) return 'Amanhã';
+  if (diff === -1) return 'Ontem';
+  const week = noon(day).toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+  return `${week[0].toUpperCase()}${week.slice(1)}, ${date(day)}`;
+}
+// Dias de gravação com roteiro em texto (o que o teleprompter lê), do mais antigo ao mais novo.
+// `todo` = roteiros que ainda não foram gravados.
+export function scriptDays(bundle) {
+  return (bundle?.shoots || [])
+    .map((s) => {
+      const scripts = bundle.demands.filter((d) => d.shoot_id === s.id && d.script?.trim()).sort((a, b) => a.number - b.number);
+      return { day: s.shot_on, scripts, todo: scripts.filter((d) => d.status === 'requested').length };
+    })
+    .filter((x) => x.scripts.length)
+    .sort((a, b) => a.day.localeCompare(b.day));
+}
+// A gravação que interessa agora: a de hoje ou a próxima que ainda tem roteiro para gravar.
+export const nextShoot = (bundle) => scriptDays(bundle).find((x) => x.day >= today() && x.todo > 0) || null;
 export const thisMonth = (v) =>
   !!v && new Date(v).getMonth() === new Date().getMonth() && new Date(v).getFullYear() === new Date().getFullYear();
 export const deliveredMonth = (d) => ['delivered', 'approved'].includes(d.status) && thisMonth(d.delivered_at);

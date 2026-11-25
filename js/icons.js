@@ -46,6 +46,7 @@ const paths = {
   screen: 'M3 4h18v12H3z M8 20h8 M12 16v4',
   remote: 'M9 2h6a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z M12 7h.01 M12 12h.01 M12 16h.01',
   text: 'M4 6h16 M4 12h16 M4 18h10',
+  prompter: 'M3 4h18v13H3z M7 8.5h10 M7 12.5h6 M8 21h8 M12 17v4',
 };
 export function Icon({ name, size = 20, ...props }) {
   return html`<svg width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ...${props}><path d=${paths[name] || paths.file}/></svg>`;

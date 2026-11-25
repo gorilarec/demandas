@@ -3662,16 +3662,6 @@ body.tp-open {
   gap: 8px;
   min-height: 52px;
 }
-.tp-open-button {
-  display: flex;
-  width: 100%;
-  margin-bottom: 18px;
-}
-.tp-open-button small {
-  margin-left: 6px;
-  font-weight: 400;
-  opacity: 0.75;
-}
 .tp-detail-link {
   margin-top: 12px;
 }
@@ -3689,6 +3679,290 @@ body.tp-open {
     min-height: 50px;
   }
 }
-.tp-open-button small {
+
+/* ---------- gravação marcada: o caminho mais curto até o teleprompter ---------- */
+.shoot-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 72px;
+  margin: 0 0 22px;
+  padding: 14px 18px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  color: var(--text);
+  text-decoration: none;
+}
+.shoot-banner:hover {
+  border-color: var(--accent);
+}
+.shoot-banner.today {
+  background: var(--accent);
+  border-color: var(--accent);
   color: var(--accent-ink);
+}
+.shoot-banner-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: var(--accent);
+}
+.shoot-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.shoot-banner-text small {
+  font: 500 11px/1.4 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.shoot-banner-text b {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.shoot-banner-go {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+.shoot-banner:hover .shoot-banner-go {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.shoot-banner.today .shoot-banner-icon,
+.shoot-banner.today .shoot-banner-text small {
+  color: inherit;
+}
+.shoot-banner.today .shoot-banner-go,
+.shoot-banner.today:hover .shoot-banner-go {
+  border-color: var(--accent-ink);
+  background: var(--accent-ink);
+  color: var(--accent);
+}
+.tp-open-button .shoot-banner-go {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.shoot-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 12px;
+  margin-bottom: 30px;
+}
+.shoot-rows .shoot-banner {
+  margin: 0;
+}
+.overview-label > a.mono {
+  text-decoration: none;
+}
+.overview-label > a.mono:hover {
+  color: var(--accent);
+}
+@media (max-width: 599px) {
+  .shoot-banner {
+    flex-wrap: wrap;
+    padding: 14px 16px;
+  }
+  .shoot-banner-go {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+    font-size: 15px;
+  }
+}
+/* ---------- tela do teleprompter: as gravações com roteiro ---------- */
+.tp-home {
+  max-width: 720px;
+  margin: auto;
+}
+.tp-home > .eyebrow {
+  margin: 28px 0 12px;
+}
+.tp-home > .page-head + .eyebrow {
+  margin-top: 0;
+}
+.tp-day {
+  margin-bottom: 14px;
+  padding: 20px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.tp-day.main {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+}
+.tp-day-client {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.tp-day-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tp-day-when b {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.tp-day-when small {
+  margin-left: 10px;
+  color: var(--muted);
+  font: 13px var(--mono);
+}
+.tp-day-count {
+  flex: none;
+  color: var(--muted);
+  font-size: 13px;
+}
+.tp-day-list {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+.tp-day-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 14px;
+}
+.tp-day-list li.done {
+  color: var(--muted);
+}
+.tp-day-list .mono {
+  flex: none;
+  color: var(--accent);
+  font-size: 12px;
+}
+.tp-day-list svg {
+  flex: none;
+  color: var(--st-approved);
+}
+.tp-day-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-day-meta {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.tp-day-open {
+  display: flex;
+  width: 100%;
+  min-height: 54px;
+  font-size: 16px;
+}
+.tp-day-add {
+  margin-top: 8px;
+}
+.tp-how {
+  margin-bottom: 18px;
+  padding: 22px 20px;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--radius);
+}
+.tp-how h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.tp-how ol {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: passo;
+}
+.tp-how li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 15px;
+  counter-increment: passo;
+}
+.tp-how li::before {
+  content: counter(passo);
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font: 600 13px var(--mono);
+}
+.tp-how li b {
+  color: var(--text);
+  font-weight: 600;
+}
+.tp-home-mark {
+  margin: 18px 0 8px;
+}
+.tp-home-mark > .button {
+  display: flex;
+  width: 100%;
+  min-height: 54px;
+}
+.tp-home-mark > .eyebrow {
+  margin: 28px 0 12px;
+}
+.tp-home-clients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.tp-add {
+  display: flex;
+  margin-top: 16px;
+}
+.kept-scripts {
+  display: grid;
+  gap: 10px;
+  margin-top: 34px;
+}
+.kept-scripts p {
+  margin: 0 0 4px;
+}
+.kept-scripts .button {
+  justify-content: flex-start;
+}
+@media (max-width: 899px) {
+  .bottom-nav > a > span:last-child {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

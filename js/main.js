@@ -5,7 +5,7 @@ import { Toast } from './components/toast.js';
 import { Avatar } from './components/avatar.js';
 import { AccountMenu } from './components/account-menu.js';
 import { Skeleton, Empty } from './components/common.js';
-import { readLocal, writeLocal, errorText, roleName } from './util.js';
+import { readLocal, writeLocal, errorText, roleName, date } from './util.js';
 import Login from './screens/login.js';
 import Clients from './screens/clients.js';
 import Demands from './screens/demands.js';
@@ -18,16 +18,38 @@ import Settings from './screens/settings.js';
 import Drive from './screens/drive.js';
 import Install from './screens/install.js';
 import Teleprompter, { tpCacheKey } from './screens/teleprompter.js';
+import TpHome from './screens/tp-home.js';
 import { Tour } from './components/tour.js';
 import { tourSteps } from './tours.js';
+// Sem sinal: os roteiros que este aparelho guardou para o teleprompter (um por cliente e dia).
+function keptScripts() {
+  const out = [];
+  try {
+    for (const key of Object.keys(localStorage)) {
+      const m = key.match(/^gd-tp-(.+)-(\d{4}-\d{2}-\d{2})$/);
+      const kept = m && readLocal(key, null);
+      const count = kept?.demands?.filter((d) => d.script?.trim()).length || 0;
+      if (count) out.push({ id: m[1], day: m[2], name: kept.client?.name || 'Gravação', count });
+    }
+  } catch {
+    /* Armazenamento bloqueado: nada guardado. */
+  }
+  return out.sort((a, b) => b.day.localeCompare(a.day)).slice(0, 6);
+}
 function App() {
   const state = useStore();
   const [hash, setHash] = useState(location.hash || '#/');
   const [menu, setMenu] = useState(false);
   useEffect(() => {
+    // Tela nova começa do topo (quem rola é a janela). O detalhe de um vídeo abre por cima da lista:
+    // abrir e fechar não mexe na rolagem, para a pessoa voltar ao mesmo ponto.
+    const overList = (h) => /^#\/c\/[^/]+(\/d\/[^/]*)?\/?$/.test(h);
+    let last = location.hash || '#/';
     const fn = () => {
-      setHash(location.hash || '#/');
-      document.querySelector('.content')?.scrollTo(0, 0);
+      const next = location.hash || '#/';
+      if (!(overList(last) && overList(next))) window.scrollTo(0, 0);
+      last = next;
+      setHash(next);
     };
     window.addEventListener('hashchange', fn);
     boot();
@@ -89,7 +111,15 @@ function App() {
   if (kept?.demands?.length)
     return html`<${Teleprompter} key=${`${parts[1]}-${tpDay}`} offline=${true} client=${kept.client} bundle=${{ shoots: [{ id: 'guardado', shot_on: tpDay }], demands: kept.demands.map((d) => ({ ...d, shoot_id: 'guardado' })) }} admin=${false} day=${tpDay} demandId=${parts[4] || null}/><${Toast} toast=${state.toast}/>`;
   if (!state.ready || (down && !member && parts[0] !== 'entrar')) {
-    return html`<div class="boot"><div class="login-brand"><img src="icons/icon.svg" alt=""/><div>GORILAREC<span>DEMANDAS</span></div></div>${state.error ? html`<div class="notice error">${errorText(state.error)}</div><button class="button primary" onClick=${boot}>Tentar novamente</button>` : html`<${Skeleton}/>`}</div>`;
+    return html`<div class="boot"><div class="login-brand"><img src="icons/icon.svg" alt=""/><div>GORILAREC<span>DEMANDAS</span></div></div>${
+      state.error
+        ? html`<div class="notice error">${errorText(state.error)}</div><button class="button primary" onClick=${boot}>Tentar novamente</button>${
+            down &&
+            keptScripts().length > 0 &&
+            html`<div class="kept-scripts"><h2 class="eyebrow">ROTEIROS GUARDADOS NESTE APARELHO</h2><p class="muted">Dá para ler no teleprompter mesmo sem sinal.</p>${keptScripts().map((k) => html`<a key=${`${k.id}-${k.day}`} class="button secondary" href=${`#/c/${k.id}/tp/${k.day}`}><${Icon} name="prompter"/>${k.name} · ${date(k.day)} · ${k.count} ${k.count === 1 ? 'roteiro' : 'roteiros'}</a>`)}</div>`
+          }`
+        : html`<${Skeleton}/>`
+    }</div>`;
   }
   if (parts[0] === 'entrar' || !member)
     return html`<${Login} key=${parts[1] || 'no-code'} code=${parts[0] === 'entrar' ? parts[1] : null}/><${Toast} toast=${state.toast}/>`;
@@ -98,18 +128,20 @@ function App() {
   const rootNav = [
     ['/', 'grid', 'Clientes'],
     ['/fila', 'queue', 'Fila'],
+    ['/tp', 'prompter', 'Teleprompter'],
     ['/clientes/novo', 'plus', 'Novo cliente'],
   ];
   const cid = client?.id || state.clients[0]?.id;
   const clientNav = [
     [`/c/${cid}`, 'grid', 'Demandas'],
     [`/c/${cid}/gravacao`, 'camera', 'Gravação'],
+    [`/c/${cid}/tp`, 'prompter', 'Teleprompter'],
     [`/c/${cid}/pedir`, 'plus', admin ? 'Pedir' : 'Pedir vídeo'],
   ];
   const unmatched = bundle?.files.filter((f) => !f.demand_id && !f.ignored && !f.removed_at).length || 0;
   const nav = client
     ? [
-        ...clientNav,
+        ...(admin ? clientNav.filter(([, icon]) => icon !== 'plus') : clientNav),
         ...(admin
           ? [
               [`/c/${cid}/drive`, 'drive', 'Drive', unmatched],
@@ -121,7 +153,8 @@ function App() {
       ? rootNav
       : clientNav;
   function navItem([path, icon, label, badge], bottom = false) {
-    const active = hash === `#${path}` || hash === `#${path}/` || (path === `/c/${cid}` && section === 'd');
+    // "Demandas" só acende na própria tela (e no detalhe de um vídeo); os outros acendem também nas telas de dentro.
+    const active = hash === `#${path}` || hash === `#${path}/` || (path === `/c/${cid}` ? section === 'd' : path !== '/' && hash.startsWith(`#${path}/`));
     return html`<a class=${`${active ? 'active' : ''} ${icon === 'plus' ? 'nav-create' : ''}`} href=${`#${path}`} aria-current=${active ? 'page' : undefined}><span class="nav-icon"><${Icon} name=${icon}/>${badge > 0 && html`<b>${badge}</b>`}</span><span>${label}</span></a>`;
   }
   let page;
@@ -130,13 +163,17 @@ function App() {
     if (['drive', 'ajustes'].includes(section) && !admin)
       page = html`<${Empty} title="Acesso restrito" description="Esta área é do editor."/>`;
     else if (section === 'gravacao')
-      page = html`<${Recording} key=${client.id} client=${client} bundle=${bundle} state=${state}/>`;
+      // #/c/ID/gravacao[/AAAA-MM-DD][/roteiro]: abre num dia certo e/ou já pedindo o roteiro.
+      page = html`<${Recording} key=${`${client.id}-${parts.slice(3).join('-')}`} client=${client} bundle=${bundle} state=${state} start=${/^\d{4}-\d{2}-\d{2}$/.test(parts[3] || '') ? parts[3] : null} startPlan=${parts[3] === 'roteiro' || parts[4] === 'roteiro'}/>`;
+    else if (section === 'tp') page = html`<${TpHome} key=${client.id} sources=${[{ client, bundle }]}/>`;
     else if (section === 'pedir') page = html`<${Request} key=${client.id} client=${client} state=${state}/>`;
     else if (section === 'drive') page = html`<${Drive} client=${client} bundle=${bundle}/>`;
     else if (section === 'ajustes') page = html`<${Settings} client=${client}/>`;
     else
       page = html`<${Demands} key=${client.id} client=${client} bundle=${bundle} state=${state} admin=${admin}/>${section === 'd' && html`<${Detail} key=${parts[3]} client=${client} bundle=${bundle} demandId=${parts[3]} state=${state} admin=${admin}/>`}`;
   } else if (admin && parts[0] === 'fila') page = html`<${Queue} state=${state}/>`;
+  else if (admin && parts[0] === 'tp')
+    page = html`<${TpHome} all=${true} sources=${state.clients.map((c) => ({ client: c, bundle: state.bundles[c.id] })).filter((x) => x.bundle)}/>`;
   else if (admin && parts[0] === 'clientes' && parts[1] === 'novo') page = html`<${NewClient}/>`;
   else if (admin && parts[0] === '') page = html`<${Clients} state=${state}/>`;
   else page = html`<${Empty} title="Painel indisponível" description="Este link não está disponível para seu acesso."/>`;

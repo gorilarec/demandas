@@ -10,6 +10,11 @@ const gravar = {
   title: 'Marque a gravação',
   text: 'Escolha o dia e mande os roteiros: no dia eles abrem no teleprompter. Depois é só marcar o que foi gravado, e nada se perde na hora de editar.',
 };
+const ler = {
+  target: '[data-tour="tp"], .bottom-nav a[href$="/tp"], .side-nav a[href$="/tp"]',
+  title: 'Teleprompter',
+  text: 'No dia da gravação, toque aqui: os roteiros que você mandou abrem na tela, prontos para ler.',
+};
 const resumo = {
   target: '.stats',
   title: 'Seu resumo',
@@ -28,7 +33,7 @@ const perfil = {
 
 export function tourSteps(name, role) {
   if (name === 'cliente')
-    return role === 'social' ? [gravar, pedir, resumo, lista, perfil] : [pedir, gravar, resumo, lista, perfil];
+    return role === 'social' ? [gravar, ler, pedir, resumo, lista, perfil] : [pedir, gravar, ler, resumo, lista, perfil];
   if (name === 'admin-inicio')
     return [
       {

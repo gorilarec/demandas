@@ -3,7 +3,8 @@ import { PageHead, Stats, Empty } from '../components/common.js';
 import { Search } from '../components/fields.js';
 import { Card } from '../components/card.js';
 import { Icon } from '../icons.js';
-import { columns, counts, sortDemands, deliveredMonth, relative } from '../util.js';
+import { columns, counts, sortDemands, deliveredMonth, relative, nextShoot, today } from '../util.js';
+import { ShootBanner } from '../components/shoot-banner.js';
 export default function Demands({ client, bundle, state, admin }) {
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -26,12 +27,17 @@ export default function Demands({ client, bundle, state, admin }) {
   const quick = {
     pedir: ['pedir', 'plus', 'Pedir vídeo', 'Mande a ideia e as referências'],
     gravar: ['gravacao', 'camera', 'Gravação', 'Marcar o dia e mandar os roteiros'],
+    tp: ['tp', 'prompter', 'Teleprompter', 'Ler os roteiros na hora de gravar'],
   };
+  // Gravação de hoje (ou a próxima) com roteiro: vira o primeiro botão da tela, direto no teleprompter.
+  const shoot = nextShoot(bundle);
+  const order = [...(social ? ['gravar', 'pedir'] : ['pedir', 'gravar']), ...(shoot ? [] : ['tp'])];
   return html`<section>
-<${PageHead} eyebrow="PAINEL DO CLIENTE" title=${client.name} description=${client.drive_synced_at ? `DRIVE · conferido ${relative(client.drive_synced_at)}` : 'Da ideia ao vídeo. Tudo por aqui.'}><a class="button secondary desktop-action" data-tour="gravar" href=${`#/c/${client.id}/gravacao`}><${Icon} name="camera"/>Gravação</a><a class="button primary desktop-action" data-tour="pedir" href=${`#/c/${client.id}/pedir`}><${Icon} name="plus"/>Pedir vídeo</a><//>
-<div class="quick-actions">${(social ? ['gravar', 'pedir'] : ['pedir', 'gravar']).map(
+<${PageHead} eyebrow="PAINEL DO CLIENTE" title=${client.name} description=${client.drive_synced_at ? `DRIVE · conferido ${relative(client.drive_synced_at)}` : 'Da ideia ao vídeo. Tudo por aqui.'}><a class="button secondary desktop-action" data-tour="tp" href=${`#/c/${client.id}/tp`}><${Icon} name="prompter"/>Teleprompter</a><a class="button secondary desktop-action" data-tour="gravar" href=${`#/c/${client.id}/gravacao`}><${Icon} name="camera"/>Gravação</a><a class="button primary desktop-action" data-tour="pedir" href=${`#/c/${client.id}/pedir`}><${Icon} name="plus"/>Pedir vídeo</a><//>
+${shoot && html`<${ShootBanner} client=${client} shoot=${shoot} tour=${true}/>`}
+<div class="quick-actions">${order.map(
     (key, i) =>
-      html`<a class=${`quick ${i === 0 ? 'main' : ''}`} data-tour=${key} href=${`#/c/${client.id}/${quick[key][0]}`}><span class="quick-icon"><${Icon} name=${quick[key][1]}/></span><span class="quick-text"><b>${quick[key][2]}</b><small>${quick[key][3]}</small></span><${Icon} name="chevron" size=${16}/></a>`,
+      html`<a class=${`quick ${i === 0 && shoot?.day !== today() ? 'main' : ''}`} data-tour=${key} href=${`#/c/${client.id}/${quick[key][0]}`}><span class="quick-icon"><${Icon} name=${quick[key][1]}/></span><span class="quick-text"><b>${quick[key][2]}</b><small>${quick[key][3]}</small></span><${Icon} name="chevron" size=${16}/></a>`,
   )}</div>
 <${Stats} items=${[
     [totals.requested + totals.recorded, 'Na fila'],

@@ -2,14 +2,20 @@ import { html } from '../../vendor/preact-htm.js';
 import { PageHead, Stats, Empty } from '../components/common.js';
 import { Chip } from '../components/chip.js';
 import { Icon } from '../icons.js';
-import { counts, deliveredMonth, relative } from '../util.js';
+import { counts, deliveredMonth, relative, nextShoot } from '../util.js';
+import { ShootBanner } from '../components/shoot-banner.js';
 export default function Clients({ state }) {
   const all = state.queue;
+  // Gravações marcadas (hoje ou adiante) com roteiro: um toque e o teleprompter abre.
+  const shoots = state.clients
+    .map((client) => ({ client, shoot: nextShoot(state.bundles[client.id]) }))
+    .filter((x) => x.shoot)
+    .sort((a, b) => a.shoot.day.localeCompare(b.shoot.day));
   return html`<section><${PageHead} eyebrow="VISÃO GERAL / ESTÚDIO" title="Clientes" description="Cada produção no seu ritmo. Tudo sob controle."><a class="button primary" href="#/clientes/novo"><${Icon} name="plus"/>Novo cliente</a><//><${Stats} items=${[
     [all.filter((d) => ['recorded', 'editing', 'adjust'].includes(d.status)).length, 'Para editar'],
     [all.filter((d) => d.status === 'requested').length, 'Aguardando gravação'],
     [all.filter(deliveredMonth).length, 'Entregues no mês'],
-  ]}/><div class="section-head overview-label"><h2 class="eyebrow">CLIENTES ATIVOS</h2><span class="mono muted">${String(state.clients.length).padStart(2, '0')} PAINÉIS</span></div><div class="client-grid">${state.clients.map(
+  ]}/>${shoots.length > 0 && html`<div class="section-head overview-label"><h2 class="eyebrow">GRAVAÇÕES MARCADAS</h2><a class="mono muted" href="#/tp">VER TODAS</a></div><div class="shoot-rows">${shoots.map(({ client, shoot }) => html`<${ShootBanner} key=${client.id} client=${client} shoot=${shoot} named=${true}/>`)}</div>`}<div class="section-head overview-label"><h2 class="eyebrow">CLIENTES ATIVOS</h2><span class="mono muted">${String(state.clients.length).padStart(2, '0')} PAINÉIS</span></div><div class="client-grid">${state.clients.map(
     (c) => {
       const b = state.bundles[c.id];
       const totals = counts(b?.demands || []);
