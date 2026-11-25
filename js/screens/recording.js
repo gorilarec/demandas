@@ -18,6 +18,7 @@ const blank = () => ({
   many: false,
   bulk: '',
   more: false,
+  linkOpen: false, // no modo roteiro o link do bloco fica recolhido até a pessoa pedir
   kind: 'done', // 'plan' = gravação marcada (roteiro para o teleprompter) · 'done' = já gravou
 });
 const MAX_BATCH = 40;
@@ -87,9 +88,11 @@ export default function Recording({ client, bundle, state, start = null, startPl
   const focusName = () => formRef.current?.querySelector('[data-name-input]')?.focus();
   // Dia que ainda vai chegar = gravação marcada: abre pedindo os roteiros. Hoje ou antes: anotar o que foi gravado.
   function openDay(value) {
-    setForm((f) => ({ ...f, shoot_date: value, link: null, kind: value > today() ? 'plan' : 'done' }));
+    setForm((f) => ({ ...f, shoot_date: value, link: null, linkOpen: false, kind: value > today() ? 'plan' : 'done' }));
   }
   const plan = form.kind === 'plan';
+  // Quem só vai colar as copies não precisa do link: ele aparece se já existe, se a pessoa pedir ou fora do modo roteiro.
+  const showLink = !plan || form.linkOpen || !!link.trim();
   const scripted = recorded.filter((d) => d.script?.trim()).length;
   async function saveLink() {
     if (form.link == null || savingLink || !day) return;
@@ -167,10 +170,17 @@ ${scripted > 0 && html`<a class="shoot-banner tp-open-button" href=${`#/c/${clie
 <div class="block-step"><span class="step-number">1</span><b>O bloco</b></div>
 <${Field} label="Dia da gravação" type="date" required value=${day} onInput=${(e) => openDay(e.target.value)}/>
 ${day && day !== today() && html`<div class="notice other-day" role="status"><span>${day > today() ? html`Gravação marcada para <b>${date(day)}</b>.` : html`Você está no bloco de <b>${date(day)}</b>, que não é hoje.`}</span><button type="button" class="text-button" onClick=${() => openDay(today())}>Ir para hoje</button></div>`}
-<div class="block-link"><${Field} label="Link do bloco" hint=${linkBad ? null : 'Um link só para o dia todo: o documento dos roteiros ou a pasta do material. Cada vídeo é achado ali pelo nome.'}><input type="url" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="2000" value=${link} onInput=${on('link')} onBlur=${saveLink} placeholder="https://docs.google.com/… ou pasta do Drive" aria-invalid=${linkBad}/></${Field}>
+${
+  !showLink &&
+  html`<button type="button" class="text-button link-toggle" onClick=${() => {
+    set('linkOpen', true);
+    setTimeout(() => formRef.current?.querySelector('.block-link input')?.focus(), 0);
+  }}><${Icon} name="link" size=${16}/>Tem um documento com todos os roteiros? Colar o link (opcional)</button>${shoot?.notes && html`<p class="block-note"><b>Observação do bloco:</b> <${Linked} text=${shoot.notes}/></p>`}`
+}
+${showLink && html`<div class="block-link"><${Field} label=${plan ? 'Link do bloco (opcional)' : 'Link do bloco'} hint=${linkBad ? null : plan ? 'Ajuda na edição. Para ler no teleprompter, cole o texto de cada roteiro aqui embaixo.' : 'Um link só para o dia todo: o documento dos roteiros ou a pasta do material. Cada vídeo é achado ali pelo nome.'}><input type="url" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="2000" value=${link} onInput=${on('link')} onBlur=${saveLink} placeholder="https://docs.google.com/… ou pasta do Drive" aria-invalid=${linkBad}/></${Field}>
 ${linkBad && html`<p class="field-error">Cole o endereço completo, começando com https://</p>`}
 ${!linkBad && (linkDirty || savedLink) && html`<div class="link-state">${linkDirty ? html`<button type="button" class="button secondary" disabled=${savingLink} onClick=${saveLink}><${Icon} name="check" size=${16}/>${savingLink ? 'Salvando…' : 'Salvar link'}</button>` : html`<span class="saved"><${Icon} name="check" size=${15}/>Link salvo neste bloco</span><a class="text-button" href=${safeUrl(savedLink)} target="_blank" rel="noopener noreferrer"><${Icon} name="external" size=${15}/>Abrir</a>`}</div>`}
-${shoot?.notes && html`<p class="block-note"><b>Observação do bloco:</b> <${Linked} text=${shoot.notes}/></p>`}</div>
+${shoot?.notes && html`<p class="block-note"><b>Observação do bloco:</b> <${Linked} text=${shoot.notes}/></p>`}</div>`}
 <div class="block-step"><span class="step-number">2</span><b>Os vídeos</b></div>
 <div class="choice-row mode-row" role="group" aria-label="O que você vai anotar"><button type="button" aria-pressed=${plan} class=${plan ? 'selected' : ''} onClick=${() => set('kind', 'plan')}>Vai gravar (roteiro)</button><button type="button" aria-pressed=${!plan} class=${!plan ? 'selected' : ''} onClick=${() => set('kind', 'done')}>Já gravou</button></div>
 ${plan && html`<${Field} label="Nome do vídeo *" hint="Um roteiro por vídeo. No dia da gravação eles abrem no teleprompter, nesta ordem."><input data-name-input value=${form.title} onInput=${on('title')} required maxlength="160" placeholder="Nome do criativo"/></${Field}><${Textarea} label="Roteiro" rows="9" maxlength="20000" placeholder="Cole aqui o texto que vai ser lido no teleprompter" value=${form.script} onInput=${on('script')} hint="Marcações entre [colchetes], como [pausa], aparecem em outra cor e não são para ler."/><${Submit} busy=${busy}>Adicionar roteiro<//>`}

@@ -70,6 +70,10 @@ export default function Detail({ client, bundle, demandId, state, admin }) {
   return html`<div class="detail-scrim" onClick=${(e) => {
     if (e.target === e.currentTarget) navigate(`/c/${client.id}`);
   }}><article class="detail-panel"><div class="detail-top"><a class="icon-button" href=${`#/c/${client.id}`} aria-label="Voltar às demandas"><${Icon} name="back"/></a><span class="demand-number">${number(d.number)}</span><${Chip} status=${d.status}/>${(canEdit || canArchive) && html`<button class="icon-button" aria-label="Opções do vídeo" onClick=${() => setSheet('menu')}><${Icon} name="more"/></button>`}</div><div class="detail-content"><div class="eyebrow">${client.name}</div><h1>${d.title}</h1><${Steps} status=${d.status}/>${d.status === 'adjust' && html`<div class="adjust-box"><b>Ajuste pedido</b><p>${adjust?.body || 'Confira as orientações na atividade.'}</p><small>${adjust?.author_name} · ${relative(adjust?.created_at)}</small></div>`}
+${
+  files.length > 0 &&
+  html`<div class="watch-block"><div class="watch-head"><span class="eyebrow">${files.length === 1 ? 'VÍDEO PRONTO' : `VÍDEOS PRONTOS (${files.length})`}</span>${d.expected_files > 1 && html`<${Progress} count=${files.length} expected=${d.expected_files}/>`}</div>${files.map((f) => html`<a key=${f.id} class="watch-link" href=${driveUrl(f)} target="_blank" rel="noopener noreferrer"><span class="watch-play"><${Icon} name="play"/></span><span class="watch-text"><b>Assistir</b><small>${f.name}</small></span><${Icon} name="external" size=${16}/></a>`)}</div>`
+}
 <div class="detail-actions">${
     admin
       ? html`<div class="status-options" aria-label="Mudar etapa">${Object.entries(statuses).map(
@@ -101,7 +105,6 @@ ${(shoot || d.camera_clips || d.notes) && html`<${Block} title="GRAVAÇÃO">${sh
     upload(e.target.files);
     e.target.value = '';
   }}/></label></div>${progress && html`<div class="upload-progress" role="status"><span>${progress.name} · ${progress.p}%</span><progress max="100" value=${progress.p}></progress></div>`}${retries.length > 0 && html`<div class="notice error"><b>Pedido salvo. Falta enviar:</b>${retries.map((f) => html`<p>${f.name}</p>`)}<button class="button secondary" disabled=${busy} onClick=${() => upload(retries)}>Tentar enviar de novo</button><small>Mantenha esta tela aberta até concluir o envio.</small></div>`}<//>
-${files.length > 0 && html`<${Block} title="VÍDEOS ENTREGUES"><${Progress} count=${files.length} expected=${d.expected_files}/>${files.map((f) => html`<a class="drive-file-link" href=${driveUrl(f)} target="_blank" rel="noopener noreferrer"><${Icon} name="play"/><span>${f.name}<small>Abrir no Drive</small></span><${Icon} name="external" size=${16}/></a>`)}<//>`}
 ${admin && html`<${Block} title="NOME PARA EXPORTAR"><div class="export-name"><code>${d.number} - ${d.title}</code><button class="icon-button" aria-label="Copiar nome para exportar" onClick=${() => clipboard(`${d.number} - ${d.title}`)}><${Icon} name="copy"/></button></div><//>`}
 <${Block} title="ATIVIDADE"><ol class="timeline">${events.map((e) => html`<li class=${['comment', 'adjust'].includes(e.kind) ? 'comment-event' : 'system-event'}><span class="timeline-dot"></span><div>${['comment', 'adjust'].includes(e.kind) && html`<div class="event-author"><${Avatar} person=${author(e)} size=${28}/><b>${e.author_name}</b></div>`}<p class="preserve">${eventBody(e)}</p><small>${!['comment', 'adjust'].includes(e.kind) && html`${e.author_kind !== 'system' && html`<${Avatar} person=${author(e)} size=${18}/>`}${e.author_name} · `}${relative(e.created_at)}</small></div></li>`)}</ol><form class="comment-form" onSubmit=${async (
     e,

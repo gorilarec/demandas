@@ -3966,3 +3966,72 @@ body.tp-open {
     white-space: nowrap;
   }
 }
+
+/* ---------- detalhe: vídeo pronto no topo, antes de aprovar ---------- */
+.watch-block {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 18px;
+}
+.watch-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.watch-head .drive-progress {
+  width: 46%;
+  min-width: 130px;
+  margin: 0;
+}
+.watch-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 68px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  color: var(--text);
+  text-decoration: none;
+}
+.watch-link:hover {
+  border-color: var(--accent);
+}
+.watch-play {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.watch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.watch-text b {
+  font-size: 16px;
+  font-weight: 600;
+}
+.watch-text small {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.watch-link > svg {
+  flex: none;
+  color: var(--muted);
+}
+/* ---------- gravação: link do bloco recolhido no modo roteiro ---------- */
+.link-toggle {
+  justify-content: flex-start;
+  margin: 2px 0 6px;
+  text-align: left;
+}
